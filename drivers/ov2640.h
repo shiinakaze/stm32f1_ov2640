@@ -1,5 +1,9 @@
-#ifndef _OV2640_H
-#define _OV2640_H
+#ifndef OV2640_H
+#define OV2640_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "main.h"
 #include "delay.h"
@@ -44,10 +48,13 @@
 void OV2640_HW_Reset(void);
 uint16_t OV2640_GetPID(void);
 uint16_t OV2640_GetMID(void);
-void OV2640_InitConfig(void);
 void OV2640_Init(void);
-void OV2640_InitConfig(void);
-void OV2640_SetOutputSize(uint16_t width, uint16_t height);
-void OV2640_TestCaptureUART(void);
+void OV2640_Init_Config(const ov2640_cfg_item_t *cfg, uint16_t len);
+void OV2640_Set_Output_Size(uint16_t width, uint16_t height);
+void OV2640_Test_Capture_UART(void);
 
-#endif // _OV2640_H
+#ifdef __cplusplus
+}
+#endif
+
+#endif // OV2640_H

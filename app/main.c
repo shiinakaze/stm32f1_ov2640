@@ -14,6 +14,6 @@ int main(void)
 
     while (1)
     {
-        OV2640_TestCaptureUART();
+        OV2640_Test_Capture_UART();
     }
 }

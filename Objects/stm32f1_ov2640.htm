@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\Objects\stm32f1_ov2640.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\stm32f1_ov2640.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Mon Jul 27 01:56:27 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Mon Jul 27 03:37:47 2026
 <BR><P>
 <H3>Maximum Stack Usage =        100 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -107,7 +107,7 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 100<LI>Call Chain = main &rArr; UART1_Init &rArr; UART1_USART_Init &rArr; USART_Init &rArr; RCC_GetClocksFreq
 </UL>
 <BR>[Calls]<UL><LI><a href="#[3b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Init
-<LI><a href="#[40]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_TestCaptureUART
+<LI><a href="#[40]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Test_Capture_UART
 <LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init
 <LI><a href="#[3d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_GetPID
 <LI><a href="#[3f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_GetMID
@@ -156,7 +156,8 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[42]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Delay_us
 </UL>
-<BR>[Called By]<UL><LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_HW_Reset
+<BR>[Called By]<UL><LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init_Config
+<LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_HW_Reset
 <LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Delay_s
 </UL>
 
@@ -349,16 +350,18 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[61]"></a>OV2640_InitConfig</STRONG> (Thumb, 38 bytes, Stack size 16 bytes, ov2640.o(.text))
-<BR><BR>[Stack]<UL><LI>Max Depth = 80<LI>Call Chain = OV2640_InitConfig &rArr; SW_SCCB_WriteReg &rArr; SW_SCCB_Write_Byte &rArr; SW_SCCB_SIO_D_SetOutput &rArr; GPIO_Init
+<P><STRONG><a name="[61]"></a>OV2640_Init_Config</STRONG> (Thumb, 54 bytes, Stack size 16 bytes, ov2640.o(.text))
+<BR><BR>[Stack]<UL><LI>Max Depth = 80<LI>Call Chain = OV2640_Init_Config &rArr; SW_SCCB_WriteReg &rArr; SW_SCCB_Write_Byte &rArr; SW_SCCB_SIO_D_SetOutput &rArr; GPIO_Init
 </UL>
 <BR>[Calls]<UL><LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_WriteReg
+<LI><a href="#[41]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Delay_ms
 </UL>
-<BR>[Called By]<UL><LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init
+<BR>[Called By]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Set_Output_JPEG
+<LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init
 </UL>
 
-<P><STRONG><a name="[62]"></a>OV2640_IOInit</STRONG> (Thumb, 120 bytes, Stack size 8 bytes, ov2640.o(.text))
-<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = OV2640_IOInit &rArr; GPIO_Init
+<P><STRONG><a name="[62]"></a>OV2640_IO_Init</STRONG> (Thumb, 120 bytes, Stack size 8 bytes, ov2640.o(.text))
+<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = OV2640_IO_Init &rArr; GPIO_Init
 </UL>
 <BR>[Calls]<UL><LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;RCC_APB2PeriphClockCmd
 <LI><a href="#[47]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;GPIO_Init
@@ -366,46 +369,46 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init
 </UL>
 
-<P><STRONG><a name="[63]"></a>OV2640_SetOutputJPEG</STRONG> (Thumb, 72 bytes, Stack size 16 bytes, ov2640.o(.text))
-<BR><BR>[Stack]<UL><LI>Max Depth = 80<LI>Call Chain = OV2640_SetOutputJPEG &rArr; SW_SCCB_WriteReg &rArr; SW_SCCB_Write_Byte &rArr; SW_SCCB_SIO_D_SetOutput &rArr; GPIO_Init
+<P><STRONG><a name="[63]"></a>OV2640_Set_Output_JPEG</STRONG> (Thumb, 20 bytes, Stack size 8 bytes, ov2640.o(.text))
+<BR><BR>[Stack]<UL><LI>Max Depth = 88<LI>Call Chain = OV2640_Set_Output_JPEG &rArr; OV2640_Init_Config &rArr; SW_SCCB_WriteReg &rArr; SW_SCCB_Write_Byte &rArr; SW_SCCB_SIO_D_SetOutput &rArr; GPIO_Init
+</UL>
+<BR>[Calls]<UL><LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init_Config
+</UL>
+<BR>[Called By]<UL><LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init
+</UL>
+
+<P><STRONG><a name="[64]"></a>OV2640_Set_Output_Size</STRONG> (Thumb, 88 bytes, Stack size 24 bytes, ov2640.o(.text))
+<BR><BR>[Stack]<UL><LI>Max Depth = 88<LI>Call Chain = OV2640_Set_Output_Size &rArr; SW_SCCB_WriteReg &rArr; SW_SCCB_Write_Byte &rArr; SW_SCCB_SIO_D_SetOutput &rArr; GPIO_Init
 </UL>
 <BR>[Calls]<UL><LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_WriteReg
 </UL>
 <BR>[Called By]<UL><LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init
 </UL>
 
-<P><STRONG><a name="[64]"></a>OV2640_SetOutputSize</STRONG> (Thumb, 88 bytes, Stack size 24 bytes, ov2640.o(.text))
-<BR><BR>[Stack]<UL><LI>Max Depth = 88<LI>Call Chain = OV2640_SetOutputSize &rArr; SW_SCCB_WriteReg &rArr; SW_SCCB_Write_Byte &rArr; SW_SCCB_SIO_D_SetOutput &rArr; GPIO_Init
+<P><STRONG><a name="[40]"></a>OV2640_Test_Capture_UART</STRONG> (Thumb, 168 bytes, Stack size 16 bytes, ov2640.o(.text))
+<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = OV2640_Test_Capture_UART &rArr; UART1_Transmit
 </UL>
-<BR>[Calls]<UL><LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_WriteReg
-</UL>
-<BR>[Called By]<UL><LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init
-</UL>
-
-<P><STRONG><a name="[3c]"></a>OV2640_Init</STRONG> (Thumb, 74 bytes, Stack size 8 bytes, ov2640.o(.text))
-<BR><BR>[Stack]<UL><LI>Max Depth = 96<LI>Call Chain = OV2640_Init &rArr; OV2640_SetOutputSize &rArr; SW_SCCB_WriteReg &rArr; SW_SCCB_Write_Byte &rArr; SW_SCCB_SIO_D_SetOutput &rArr; GPIO_Init
-</UL>
-<BR>[Calls]<UL><LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_WriteReg
-<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Init
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_SetOutputSize
-<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_SetOutputJPEG
-<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_IOInit
-<LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_InitConfig
-<LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_HW_Reset
-</UL>
-<BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
-</UL>
-
-<P><STRONG><a name="[40]"></a>OV2640_TestCaptureUART</STRONG> (Thumb, 168 bytes, Stack size 16 bytes, ov2640.o(.text))
-<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = OV2640_TestCaptureUART &rArr; UART1_Transmit
-</UL>
-<BR>[Calls]<UL><LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
+<BR>[Calls]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;GPIO_ReadInputDataBit
 </UL>
 <BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[65]"></a>SW_SCCB_Init</STRONG> (Thumb, 38 bytes, Stack size 8 bytes, sccb.o(.text))
+<P><STRONG><a name="[3c]"></a>OV2640_Init</STRONG> (Thumb, 78 bytes, Stack size 8 bytes, ov2640.o(.text))
+<BR><BR>[Stack]<UL><LI>Max Depth = 96<LI>Call Chain = OV2640_Init &rArr; OV2640_Set_Output_Size &rArr; SW_SCCB_WriteReg &rArr; SW_SCCB_Write_Byte &rArr; SW_SCCB_SIO_D_SetOutput &rArr; GPIO_Init
+</UL>
+<BR>[Calls]<UL><LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_WriteReg
+<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Init
+<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Set_Output_Size
+<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Set_Output_JPEG
+<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_IO_Init
+<LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init_Config
+<LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_HW_Reset
+</UL>
+<BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+</UL>
+
+<P><STRONG><a name="[66]"></a>SW_SCCB_Init</STRONG> (Thumb, 38 bytes, Stack size 8 bytes, sccb.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = SW_SCCB_Init &rArr; GPIO_Init
 </UL>
 <BR>[Calls]<UL><LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;RCC_APB2PeriphClockCmd
@@ -484,9 +487,8 @@ Global Symbols
 <LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Stop
 <LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Start
 </UL>
-<BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_SetOutputSize
-<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_SetOutputJPEG
-<LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_InitConfig
+<BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Set_Output_Size
+<LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init_Config
 <LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Init
 <LI><a href="#[3d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_GetPID
 <LI><a href="#[3f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_GetMID
@@ -535,7 +537,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[66]"></a>UART1_Transmit</STRONG> (Thumb, 94 bytes, Stack size 16 bytes, uart.o(.text))
+<P><STRONG><a name="[65]"></a>UART1_Transmit</STRONG> (Thumb, 94 bytes, Stack size 16 bytes, uart.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = UART1_Transmit
 </UL>
 <BR>[Calls]<UL><LI><a href="#[7a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART_GetFlagStatus
@@ -545,11 +547,11 @@ Global Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[7f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fputc
 <LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_SendString
-<LI><a href="#[40]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_TestCaptureUART
+<LI><a href="#[40]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Test_Capture_UART
 </UL>
 
 <P><STRONG><a name="[7b]"></a>UART1_SendString</STRONG> (Thumb, 28 bytes, Stack size 16 bytes, uart.o(.text), UNUSED)
-<BR><BR>[Calls]<UL><LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
+<BR><BR>[Calls]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
 <LI><a href="#[7c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strlen
 </UL>
 
@@ -561,7 +563,7 @@ Global Symbols
 <P><STRONG><a name="[93]"></a>_sys_exit</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, uart.o(.text), UNUSED)
 
 <P><STRONG><a name="[7f]"></a>fputc</STRONG> (Thumb, 22 bytes, Stack size 16 bytes, uart.o(.text), UNUSED)
-<BR><BR>[Calls]<UL><LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
+<BR><BR>[Calls]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
 </UL>
 
 <P><STRONG><a name="[36]"></a>SystemInit</STRONG> (Thumb, 78 bytes, Stack size 8 bytes, system_stm32f10x.o(.text))
@@ -723,7 +725,7 @@ Global Symbols
 
 <P><STRONG><a name="[71]"></a>DMA_Cmd</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, stm32f10x_dma.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_DMA_Init
-<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
+<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
 </UL>
 
 <P><STRONG><a name="[96]"></a>DMA_ITConfig</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, stm32f10x_dma.o(.text), UNUSED)
@@ -733,11 +735,11 @@ Global Symbols
 <P><STRONG><a name="[98]"></a>DMA_GetCurrDataCounter</STRONG> (Thumb, 8 bytes, Stack size 0 bytes, stm32f10x_dma.o(.text), UNUSED)
 
 <P><STRONG><a name="[79]"></a>DMA_GetFlagStatus</STRONG> (Thumb, 40 bytes, Stack size 0 bytes, stm32f10x_dma.o(.text))
-<BR><BR>[Called By]<UL><LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
+<BR><BR>[Called By]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
 </UL>
 
 <P><STRONG><a name="[78]"></a>DMA_ClearFlag</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, stm32f10x_dma.o(.text))
-<BR><BR>[Called By]<UL><LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
+<BR><BR>[Called By]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
 </UL>
 
 <P><STRONG><a name="[99]"></a>DMA_GetITStatus</STRONG> (Thumb, 40 bytes, Stack size 0 bytes, stm32f10x_dma.o(.text), UNUSED)
@@ -759,8 +761,8 @@ Global Symbols
 <LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SCCB_Init
 <LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_SIO_D_SetOutput
 <LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_SIO_D_SetInput
-<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Init
-<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_IOInit
+<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Init
+<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_IO_Init
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HW_I2C_Init
 <LI><a href="#[44]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_I2C_Init
 </UL>
@@ -771,7 +773,7 @@ Global Symbols
 <BR><BR>[Called By]<UL><LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Read_Byte
 <LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Write_Byte
 <LI><a href="#[4b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_I2C_TransmitByte
-<LI><a href="#[40]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_TestCaptureUART
+<LI><a href="#[40]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_Test_Capture_UART
 </UL>
 
 <P><STRONG><a name="[9c]"></a>GPIO_ReadInputData</STRONG> (Thumb, 8 bytes, Stack size 0 bytes, stm32f10x_gpio.o(.text), UNUSED)
@@ -952,8 +954,8 @@ Global Symbols
 
 <P><STRONG><a name="[45]"></a>RCC_APB2PeriphClockCmd</STRONG> (Thumb, 26 bytes, Stack size 0 bytes, stm32f10x_rcc.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SCCB_Init
-<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Init
-<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_IOInit
+<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_SCCB_Init
+<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;OV2640_IO_Init
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HW_I2C_Init
 <LI><a href="#[44]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SW_I2C_Init
 <LI><a href="#[3b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Init
@@ -1054,7 +1056,7 @@ Global Symbols
 
 <P><STRONG><a name="[7a]"></a>USART_GetFlagStatus</STRONG> (Thumb, 26 bytes, Stack size 0 bytes, stm32f10x_usart.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[7d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_Receive
-<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
+<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART1_Transmit
 </UL>
 
 <P><STRONG><a name="[ef]"></a>USART_ClearFlag</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, stm32f10x_usart.o(.text), UNUSED)

@@ -1,3 +1,10 @@
+#ifndef OV2640_CFG_H
+#define OV2640_CFG_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "main.h"
 
 // DSP register bank, when 0xFF=0x00
@@ -84,6 +91,19 @@
 #define OV2640_SENSOR_HISTO_LOW 0x61
 #define OV2640_SENSOR_HISTO_HIGH 0x62
 
-extern const uint8_t atk_mc2640_init_uxga_cfg[178][2];
-extern const uint8_t atk_mc2640_set_yuv422_cfg[8][2];
-extern const uint8_t atk_mc2640_set_jpeg_cfg[7][2];
+typedef struct {
+    uint8_t reg;        // 寄存器地址
+    uint8_t val;        // 要写入的值
+    uint16_t delay_ms;  // 写入后延时的毫秒数（0 表示不延时）
+} ov2640_cfg_item_t;
+
+extern const ov2640_cfg_item_t atk_mc2640_init_uxga_cfg[178];
+extern const ov2640_cfg_item_t atk_mc2640_set_yuv422_cfg[8];
+extern const ov2640_cfg_item_t atk_mc2640_set_jpeg_cfg[7];
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // OV2640_CFG_H
+

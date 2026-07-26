@@ -42,16 +42,24 @@ uint16_t OV2640_GetMID(void)
     return MID;
 }
 
-void OV2640_InitConfig(void)
+/**
+ * @brief  通用 OV2640 寄存器初始化函数（支持延时）
+ * @param  cfg  配置数组指针
+ * @param  len  数组长度
+ */
+void OV2640_Init_Config(const ov2640_cfg_item_t *cfg, uint16_t len)
 {
-    uint16_t cfg_len = sizeof(atk_mc2640_init_uxga_cfg) / sizeof(atk_mc2640_init_uxga_cfg[0]);
-    for (uint16_t i = 0; i < cfg_len; i++)
+    for (uint16_t i = 0; i < len; i++)
     {
-        SCCB_Write(atk_mc2640_init_uxga_cfg[i][0], atk_mc2640_init_uxga_cfg[i][1]);
+        SCCB_Write(cfg[i].reg, cfg[i].val);
+        if (cfg[i].delay_ms)
+        {
+            Delay_ms(cfg[i].delay_ms);
+        }
     }
 }
 
-void OV2640_IOInit(void)
+void OV2640_IO_Init(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB_OV2640, ENABLE);
 
@@ -79,21 +87,13 @@ void OV2640_IOInit(void)
     GPIO_Init(DATA_GPIO, &GPIO_InitStructure);
 }
 
-void OV2640_SetOutputJPEG(void)
+void OV2640_Set_Output_JPEG(void)
 {
-    uint16_t cfg_len = sizeof(atk_mc2640_set_yuv422_cfg) / sizeof(atk_mc2640_set_yuv422_cfg[0]);
-    for (uint16_t cfg_index = 0; cfg_index < cfg_len; cfg_index++)
-    {
-        SCCB_Write(atk_mc2640_set_yuv422_cfg[cfg_index][0], atk_mc2640_set_yuv422_cfg[cfg_index][1]);
-    }
-    cfg_len = sizeof(atk_mc2640_set_jpeg_cfg) / sizeof(atk_mc2640_set_jpeg_cfg[0]);
-    for (uint16_t cfg_index = 0; cfg_index < cfg_len; cfg_index++)
-    {
-        SCCB_Write(atk_mc2640_set_jpeg_cfg[cfg_index][0], atk_mc2640_set_jpeg_cfg[cfg_index][1]);
-    }
+    OV2640_Init_Config(atk_mc2640_set_yuv422_cfg, sizeof(atk_mc2640_set_yuv422_cfg) / sizeof(ov2640_cfg_item_t));
+    OV2640_Init_Config(atk_mc2640_set_jpeg_cfg, sizeof(atk_mc2640_set_jpeg_cfg) / sizeof(ov2640_cfg_item_t));
 }
 
-void OV2640_SetOutputSize(uint16_t width, uint16_t height)
+void OV2640_Set_Output_Size(uint16_t width, uint16_t height)
 {
     uint16_t output_width;
     uint16_t output_height;
@@ -107,47 +107,9 @@ void OV2640_SetOutputSize(uint16_t width, uint16_t height)
     SCCB_Write(OV2640_DSP_ZMOH, (uint8_t)(output_height & 0x00FF));
     SCCB_Write(OV2640_DSP_ZMHH, ((uint8_t)(output_width >> 8) & 0x03) | ((uint8_t)(output_height >> 6) & 0x04));
     SCCB_Write(OV2640_DSP_RESET, 0x00);
-
-    // uint16_t outh;
-    // uint16_t outw;
-    // uint8_t temp;
-    // if (width % 4)
-    // {
-    //     return 1;
-    // }
-    // if (height % 4)
-    // {
-    //     return 2;
-    // }
-    // outw = width / 4;
-    // outh = height / 4;
-    // SCCB_Write(0XFF, 0X00);
-    // SCCB_Write(0XE0, 0X04);
-    // SCCB_Write(0X5A, outw & 0XFF); // 设置OUTW的低八位
-    // SCCB_Write(0X5B, outh & 0XFF); // 设置OUTH的低八位
-    // temp = (outw >> 8) & 0X03;
-    // temp |= (outh >> 6) & 0X04;
-    // SCCB_Write(0X5C, temp); // 设置OUTH/OUTW的高位
-    // SCCB_Write(0XE0, 0X00);
 }
 
-void OV2640_Init(void)
-{
-    OV2640_IOInit();
-    OV2640_HW_Reset();
-    SW_SCCB_Init();
-    OV2640_InitConfig();
-
-    SCCB_Write(0XFF, 0x00);
-    SCCB_Write(0XD3, 48); // DVP PCLK division
-    SCCB_Write(0XFF, 0x01);
-    SCCB_Write(0X11, 2); // CLK division
-
-    OV2640_SetOutputJPEG();
-    OV2640_SetOutputSize(320, 240);
-}
-
-void OV2640_TestCaptureUART(void)
+void OV2640_Test_Capture_UART(void)
 {
     uint32_t buffer_inedex = 0;
     uint32_t jpeg_valid_start, jpeg_valid_end = 0;
@@ -184,4 +146,22 @@ void OV2640_TestCaptureUART(void)
             }
         }
     }
+}
+
+void OV2640_Init(void)
+{
+    OV2640_IO_Init();
+    OV2640_HW_Reset();
+    SW_SCCB_Init();
+
+    OV2640_Init_Config(atk_mc2640_init_uxga_cfg, sizeof(atk_mc2640_init_uxga_cfg) / sizeof(ov2640_cfg_item_t));
+
+    OV2640_Set_Output_JPEG();
+
+    SCCB_Write(0XFF, 0x01);
+    SCCB_Write(0X11, 0x00); // CLKRC
+    SCCB_Write(0XFF, 0x00);
+    SCCB_Write(0XD3, 0x64); // R_DVP_SP
+
+    OV2640_Set_Output_Size(320, 240);
 }

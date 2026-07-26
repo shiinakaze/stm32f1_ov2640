@@ -1,6 +1,6 @@
 Dependencies for Project 'stm32f1_ov2640', Target 'Target_1': (DO NOT MODIFY !)
 CompilerVersion: 5060960::V5.06 update 7 (build 960)::.\ARMCC
-F (.\app\main.c)(0x6A6637B8)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I .\app -I .\middleware -I .\drivers -I .\drivers\cmsis\core -I .\drivers\cmsis\device -I .\drivers\cmsis\device\startup -I .\drivers\spl\inc-IC:\Users\shiinakaze\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="543" -DSTM32F10X_MD -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
+F (.\app\main.c)(0x6A666204)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I .\app -I .\middleware -I .\drivers -I .\drivers\cmsis\core -I .\drivers\cmsis\device -I .\drivers\cmsis\device\startup -I .\drivers\spl\inc-IC:\Users\shiinakaze\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="543" -DSTM32F10X_MD -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
 I (app\main.h)(0x660525B7)
 I (.\drivers\cmsis\device\stm32f10x.h)(0x61605444)
 I (.\drivers\cmsis\core\core_cm3.h)(0x61605444)
@@ -30,13 +30,13 @@ I (.\drivers\spl\inc\stm32f10x_tim.h)(0x61605445)
 I (.\drivers\spl\inc\stm32f10x_usart.h)(0x61605445)
 I (.\drivers\spl\inc\stm32f10x_wwdg.h)(0x61605445)
 I (.\drivers\spl\inc\misc.h)(0x61605445)
-I (.\drivers\ov2640.h)(0x6A6649A2)
+I (.\drivers\ov2640.h)(0x6A665841)
 I (.\middleware\delay.h)(0x66052600)
 I (.\drivers\sccb.h)(0x6655F395)
 I (.\drivers\uart.h)(0x6A663703)
 I (C:\Users\shiinakaze\AppData\Local\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5E8E3CC2)
 I (C:\Users\shiinakaze\AppData\Local\Keil_v5\ARM\ARMCC\include\string.h)(0x5E8E3CC2)
-I (.\drivers\ov2640_cfg.h)(0x662513BC)
+I (.\drivers\ov2640_cfg.h)(0x6A66595C)
 I (.\drivers\oled.h)(0x65F81697)
 I (.\drivers\i2c.h)(0x6A6642B2)
 F (.\app\stm32f10x_it.c)(0x61605442)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I .\app -I .\middleware -I .\drivers -I .\drivers\cmsis\core -I .\drivers\cmsis\device -I .\drivers\cmsis\device\startup -I .\drivers\spl\inc-IC:\Users\shiinakaze\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="543" -DSTM32F10X_MD -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\stm32f10x_it.o --omf_browse .\objects\stm32f10x_it.crf --depend .\objects\stm32f10x_it.d)
@@ -194,8 +194,8 @@ I (.\drivers\spl\inc\stm32f10x_tim.h)(0x61605445)
 I (.\drivers\spl\inc\stm32f10x_usart.h)(0x61605445)
 I (.\drivers\spl\inc\stm32f10x_wwdg.h)(0x61605445)
 I (.\drivers\spl\inc\misc.h)(0x61605445)
-F (.\drivers\ov2640.c)(0x6A664A44)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I .\app -I .\middleware -I .\drivers -I .\drivers\cmsis\core -I .\drivers\cmsis\device -I .\drivers\cmsis\device\startup -I .\drivers\spl\inc-IC:\Users\shiinakaze\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="543" -DSTM32F10X_MD -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\ov2640.o --omf_browse .\objects\ov2640.crf --depend .\objects\ov2640.d)
-I (drivers\ov2640.h)(0x6A6649A2)
+F (.\drivers\ov2640.c)(0x6A6661FC)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I .\app -I .\middleware -I .\drivers -I .\drivers\cmsis\core -I .\drivers\cmsis\device -I .\drivers\cmsis\device\startup -I .\drivers\spl\inc-IC:\Users\shiinakaze\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="543" -DSTM32F10X_MD -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\ov2640.o --omf_browse .\objects\ov2640.crf --depend .\objects\ov2640.d)
+I (drivers\ov2640.h)(0x6A665841)
 I (.\app\main.h)(0x660525B7)
 I (.\drivers\cmsis\device\stm32f10x.h)(0x61605444)
 I (.\drivers\cmsis\core\core_cm3.h)(0x61605444)
@@ -230,9 +230,9 @@ I (drivers\sccb.h)(0x6655F395)
 I (drivers\uart.h)(0x6A663703)
 I (C:\Users\shiinakaze\AppData\Local\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5E8E3CC2)
 I (C:\Users\shiinakaze\AppData\Local\Keil_v5\ARM\ARMCC\include\string.h)(0x5E8E3CC2)
-I (drivers\ov2640_cfg.h)(0x662513BC)
-F (.\drivers\ov2640_cfg.c)(0x66249370)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I .\app -I .\middleware -I .\drivers -I .\drivers\cmsis\core -I .\drivers\cmsis\device -I .\drivers\cmsis\device\startup -I .\drivers\spl\inc-IC:\Users\shiinakaze\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="543" -DSTM32F10X_MD -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\ov2640_cfg.o --omf_browse .\objects\ov2640_cfg.crf --depend .\objects\ov2640_cfg.d)
-I (drivers\ov2640_cfg.h)(0x662513BC)
+I (drivers\ov2640_cfg.h)(0x6A66595C)
+F (.\drivers\ov2640_cfg.c)(0x6A6659A9)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I .\app -I .\middleware -I .\drivers -I .\drivers\cmsis\core -I .\drivers\cmsis\device -I .\drivers\cmsis\device\startup -I .\drivers\spl\inc-IC:\Users\shiinakaze\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="543" -DSTM32F10X_MD -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER-o .\objects\ov2640_cfg.o --omf_browse .\objects\ov2640_cfg.crf --depend .\objects\ov2640_cfg.d)
+I (drivers\ov2640_cfg.h)(0x6A66595C)
 I (.\app\main.h)(0x660525B7)
 I (.\drivers\cmsis\device\stm32f10x.h)(0x61605444)
 I (.\drivers\cmsis\core\core_cm3.h)(0x61605444)
