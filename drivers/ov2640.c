@@ -161,7 +161,7 @@ void OV2640_TestCaptureUART(void)
             while (OV2640_PCLK == 0) // wait for PCLK rising edge and read data
             {
             }
-            jpeg_buffer[buffer_inedex] = OV2640_DATA;
+            jpeg_buffer[buffer_inedex] = OV2640_READ_DATA();
             buffer_inedex++;
             while (OV2640_PCLK == 1) //  wait for PCLK falling edge, update data
             {
