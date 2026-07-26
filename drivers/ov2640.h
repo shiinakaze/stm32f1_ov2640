@@ -16,8 +16,8 @@
 
 #define PCLK_PWDN_HREF_RESET_VSYNC_GPIO GPIOB
 
+#define RESET_PIN GPIO_Pin_0
 #define PWDN_PIN GPIO_Pin_1
-#define RESET_PIN GPIO_Pin_3
 #define VSYNC_PIN GPIO_Pin_6
 #define HREF_PIN GPIO_Pin_7
 #define PCLK_PIN GPIO_Pin_8

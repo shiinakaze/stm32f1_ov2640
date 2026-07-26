@@ -5,8 +5,8 @@
 // SSD1306 configuration
 #define SSD1306_Clock RCC_APB2Periph_GPIOB
 #define SSD1306_GPIOx GPIOB
-#define SSD1306_SCL_Pin GPIO_Pin_6
-#define SSD1306_SDA_Pin GPIO_Pin_7
+#define SSD1306_SCL_Pin GPIO_Pin_4
+#define SSD1306_SDA_Pin GPIO_Pin_5
 #define SSD1306_Slave_Address 0x78
 #define SSD1306_Control_Command 0x00
 #define SSD1306_Control_Data 0x40

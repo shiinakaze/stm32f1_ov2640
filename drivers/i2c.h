@@ -9,11 +9,11 @@
 #define I2CX I2C1
 #define RCC_APB_I2C RCC_APB1Periph_I2C1
 /*GPIO*/
-#define RCC_APB_GPIO RCC_APB2Periph_GPIOB
+#define RCC_APB_GPIO (RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO)
 #define I2C_GPIOX GPIOB
 /*Pin*/
-#define SCL_PIN GPIO_Pin_6
-#define SDA_PIN GPIO_Pin_7
+#define SCL_PIN GPIO_Pin_3
+#define SDA_PIN GPIO_Pin_4
 /*Other*/
 #define I2C_STD_SPEED 100000
 #define I2C_FAST_SPEED 400000

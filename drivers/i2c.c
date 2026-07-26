@@ -10,6 +10,7 @@ void SW_I2C_Init(void)
 {
 	// GPIO clock enable
 	RCC_APB2PeriphClockCmd(RCC_APB_GPIO, ENABLE);
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 	// GPIO Setting
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
