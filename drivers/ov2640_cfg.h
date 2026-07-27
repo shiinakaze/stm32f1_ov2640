@@ -97,9 +97,8 @@ typedef struct {
     uint16_t delay_ms;  // 写入后延时的毫秒数（0 表示不延时）
 } ov2640_cfg_item_t;
 
-extern const ov2640_cfg_item_t atk_mc2640_init_uxga_cfg[178];
-extern const ov2640_cfg_item_t atk_mc2640_set_yuv422_cfg[8];
-extern const ov2640_cfg_item_t atk_mc2640_set_jpeg_cfg[7];
+extern const ov2640_cfg_item_t svga_rgb565_25fps_cfg[177];
+extern const ov2640_cfg_item_t ov2640_set_jpeg_cfg[20];
 
 #ifdef __cplusplus
 }

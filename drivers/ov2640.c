@@ -89,8 +89,9 @@ void OV2640_IO_Init(void)
 
 void OV2640_Set_Output_JPEG(void)
 {
-    OV2640_Init_Config(atk_mc2640_set_yuv422_cfg, sizeof(atk_mc2640_set_yuv422_cfg) / sizeof(ov2640_cfg_item_t));
-    OV2640_Init_Config(atk_mc2640_set_jpeg_cfg, sizeof(atk_mc2640_set_jpeg_cfg) / sizeof(ov2640_cfg_item_t));
+    // OV2640_Init_Config(atk_mc2640_set_yuv422_cfg, sizeof(atk_mc2640_set_yuv422_cfg) / sizeof(ov2640_cfg_item_t));
+    // OV2640_Init_Config(atk_mc2640_set_jpeg_cfg, sizeof(atk_mc2640_set_jpeg_cfg) / sizeof(ov2640_cfg_item_t));
+    OV2640_Init_Config(ov2640_set_jpeg_cfg, sizeof(ov2640_set_jpeg_cfg) / sizeof(ov2640_cfg_item_t));
 }
 
 void OV2640_Set_Output_Size(uint16_t width, uint16_t height)
@@ -154,7 +155,8 @@ void OV2640_Init(void)
     OV2640_HW_Reset();
     SW_SCCB_Init();
 
-    OV2640_Init_Config(atk_mc2640_init_uxga_cfg, sizeof(atk_mc2640_init_uxga_cfg) / sizeof(ov2640_cfg_item_t));
+    // OV2640_Init_Config(atk_mc2640_init_uxga_cfg, sizeof(atk_mc2640_init_uxga_cfg) / sizeof(ov2640_cfg_item_t));
+    OV2640_Init_Config(svga_rgb565_25fps_cfg, sizeof(svga_rgb565_25fps_cfg) / sizeof(ov2640_cfg_item_t));
 
     OV2640_Set_Output_JPEG();
 
@@ -163,5 +165,5 @@ void OV2640_Init(void)
     SCCB_Write(0XFF, 0x00);
     SCCB_Write(0XD3, 0x64); // R_DVP_SP
 
-    OV2640_Set_Output_Size(320, 240);
+    OV2640_Set_Output_Size(640, 480);
 }

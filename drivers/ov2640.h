@@ -20,11 +20,11 @@ extern "C" {
 
 #define PCLK_PWDN_HREF_RESET_VSYNC_GPIO GPIOB
 
-#define RESET_PIN GPIO_Pin_0
-#define PWDN_PIN GPIO_Pin_1
-#define VSYNC_PIN GPIO_Pin_6
-#define HREF_PIN GPIO_Pin_7
+#define VSYNC_PIN GPIO_Pin_3
+#define HREF_PIN GPIO_Pin_4
+#define RESET_PIN GPIO_Pin_5
 #define PCLK_PIN GPIO_Pin_8
+#define PWDN_PIN GPIO_Pin_9
 
 // Data Pin
 #define DATA_GPIO GPIOA
