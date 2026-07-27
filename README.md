@@ -1,3 +1,9 @@
+branch:
+
+- stm32f1_ov2640
+- stm32f1_ov2640_test: Test signal
+- stm32f1_ov2640_dma: legacy
+
 ```
 .
 |-- DebugConfig
