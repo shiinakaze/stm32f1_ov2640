@@ -1,5 +1,5 @@
-#ifndef OV2640_H
-#define OV2640_H
+#ifndef _OV2640_H
+#define _OV2640_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -8,7 +8,7 @@ extern "C" {
 #include "main.h"
 #include "delay.h"
 #include "sccb.h"
-#include "ov2640_cfg.h"
+#include "ov2640_config.h"
 
 #define OV2640_DEVICE_ADDRESS 0x60
 
@@ -58,4 +58,4 @@ uint8_t *OV2640_GetReadyFrame(uint32_t *len);
 }
 #endif
 
-#endif // OV2640_H
+#endif // _OV2640_H

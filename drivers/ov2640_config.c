@@ -1,4 +1,4 @@
-#include "ov2640_cfg.h"
+#include "ov2640_config.h"
 
 /**
  * @brief Application Note, MCLK 24Mhz, SVGA RGB565 output 25fps

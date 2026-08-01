@@ -37,9 +37,9 @@ $ tree -L 2
 |   |               `-- ov2640.crf
 |   |               `-- ov2640.d
 |   |               `-- ov2640.o
-|   |               `-- ov2640_cfg.crf
-|   |               `-- ov2640_cfg.d
-|   |               `-- ov2640_cfg.o
+|   |               `-- ov2640_config.crf
+|   |               `-- ov2640_config.d
+|   |               `-- ov2640_config.o
 |   |               `-- sccb.crf
 |   |               `-- sccb.d
 |   |               `-- sccb.o
@@ -147,8 +147,8 @@ $ tree -L 2
 |   |               `-- oled_font.h
 |   |               `-- ov2640.c
 |   |               `-- ov2640.h
-|   |               `-- ov2640_cfg.c
-|   |               `-- ov2640_cfg.h
+|   |               `-- ov2640_config.c
+|   |               `-- ov2640_config.h
 |   |               `-- sccb.c
 |   |               `-- sccb.h
 |   |               `-- sht30.c

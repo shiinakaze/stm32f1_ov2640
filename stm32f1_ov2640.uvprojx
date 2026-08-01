@@ -435,9 +435,9 @@
               <FilePath>.\drivers\ov2640.c</FilePath>
             </File>
             <File>
-              <FileName>ov2640_cfg.c</FileName>
+              <FileName>ov2640_config.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\drivers\ov2640_cfg.c</FilePath>
+              <FilePath>.\drivers\ov2640_config.c</FilePath>
             </File>
             <File>
               <FileName>sccb.c</FileName>

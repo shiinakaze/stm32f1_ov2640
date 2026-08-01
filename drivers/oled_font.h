@@ -1,5 +1,5 @@
-#ifndef __OLED_FONT_H
-#define __OLED_FONT_H
+#ifndef _OLED_FONT_H
+#define _OLED_FONT_H
 
 #include "main.h"
 
