@@ -6,17 +6,17 @@
  * @param  None
  * @retval None
  */
-void SW_I2C_Init(void)
+void sw_i2c_init(void)
 {
 	// GPIO clock enable
 	RCC_APB2PeriphClockCmd(RCC_APB_GPIO, ENABLE);
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 	// GPIO Setting
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Pin = SCL_PIN | SDA_PIN;
-	GPIO_Init(I2C_GPIOX, &GPIO_InitStructure);
+	GPIO_InitTypeDef gpio_init_struct;
+	gpio_init_struct.GPIO_Mode = GPIO_Mode_Out_OD;
+	gpio_init_struct.GPIO_Speed = GPIO_Speed_50MHz;
+	gpio_init_struct.GPIO_Pin = SCL_PIN | SDA_PIN;
+	GPIO_Init(I2C_GPIOX, &gpio_init_struct);
 
 	SW_I2C_SCL(Bit_SET);
 	SW_I2C_SDA(Bit_SET);
@@ -27,7 +27,7 @@ void SW_I2C_Init(void)
  * @param  None
  * @retval None
  */
-void SW_I2C_Start(void)
+void sw_i2c_start(void)
 {
 	SW_I2C_SDA(Bit_SET);
 	SW_I2C_SCL(Bit_SET);
@@ -40,7 +40,7 @@ void SW_I2C_Start(void)
  * @param  None
  * @retval None
  */
-void SW_I2C_Stop(void)
+void sw_i2c_stop(void)
 {
 	SW_I2C_SDA(Bit_RESET);
 	SW_I2C_SCL(Bit_SET);
@@ -52,12 +52,12 @@ void SW_I2C_Stop(void)
  * @param  Byte
  * @retval None
  */
-uint8_t SW_I2C_TransmitByte(uint8_t Byte)
+uint8_t sw_i2c_transmit_byte(uint8_t byte)
 {
 	uint8_t ack;
 	for (uint8_t i = 0; i < 8; i++)
 	{
-		if (Byte & 0x80)
+		if (byte & 0x80)
 		{
 			SW_I2C_SDA(Bit_SET);
 		}
@@ -65,7 +65,7 @@ uint8_t SW_I2C_TransmitByte(uint8_t Byte)
 		{
 			SW_I2C_SDA(Bit_RESET);
 		}
-		Byte <<= 1;
+		byte <<= 1;
 
 		SW_I2C_SCL(Bit_SET);
 		SW_I2C_SCL(Bit_RESET);
@@ -78,27 +78,27 @@ uint8_t SW_I2C_TransmitByte(uint8_t Byte)
 	return ack;
 }
 
-void HW_I2C_Init(void)
+void hw_i2c_init(void)
 {
 	// GPIO clock enable
 	RCC_APB2PeriphClockCmd(RCC_APB_GPIO, ENABLE);
 	// GPIO Setting
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
-	GPIO_InitStructure.GPIO_Pin = SCL_PIN | SDA_PIN;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(I2C_GPIOX, &GPIO_InitStructure);
+	GPIO_InitTypeDef gpio_init_struct;
+	gpio_init_struct.GPIO_Mode = GPIO_Mode_AF_OD;
+	gpio_init_struct.GPIO_Pin = SCL_PIN | SDA_PIN;
+	gpio_init_struct.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(I2C_GPIOX, &gpio_init_struct);
 	// I2C clock enable
 	RCC_APB1PeriphClockCmd(RCC_APB_I2C, ENABLE);
 	// I2C Setting
-	I2C_InitTypeDef I2C_InitStructure;
-	I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;
-	I2C_InitStructure.I2C_ClockSpeed = I2C_FAST_SPEED;
-	I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;
-	I2C_InitStructure.I2C_Ack = I2C_Ack_Disable;
-	I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-	I2C_InitStructure.I2C_OwnAddress1 = 0x00;
-	I2C_Init(I2CX, &I2C_InitStructure);
+	I2C_InitTypeDef i2c_init_struct;
+	i2c_init_struct.I2C_Mode = I2C_Mode_I2C;
+	i2c_init_struct.I2C_ClockSpeed = I2C_FAST_SPEED;
+	i2c_init_struct.I2C_DutyCycle = I2C_DutyCycle_2;
+	i2c_init_struct.I2C_Ack = I2C_Ack_Disable;
+	i2c_init_struct.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+	i2c_init_struct.I2C_OwnAddress1 = 0x00;
+	I2C_Init(I2CX, &i2c_init_struct);
 
 	I2C_Cmd(I2CX, ENABLE);
 }

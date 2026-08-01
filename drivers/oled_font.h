@@ -3,6 +3,6 @@
 
 #include "main.h"
 
-extern uint8_t Font8x16[][16];
+extern uint8_t font_8x16[][16];
 
 #endif

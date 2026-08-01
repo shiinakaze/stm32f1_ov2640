@@ -1,87 +1,87 @@
 #include "uart.h"
 
-static void UART1_GPIO_Init(void);
-static void UART1_USART_Init(uint32_t baudrate);
+static void uart1_gpio_init(void);
+static void uart1_usart_init(uint32_t baudrate);
 
 /* 标记当前是否有一次非阻塞 DMA 发送正在进行 */
 static volatile uint8_t tx_busy = 0;
 
-void UART1_Init(uint32_t baudrate)
+void uart1_init(uint32_t baudrate)
 {
     /* 时钟使能 */
     RCC_APB2PeriphClockCmd(RCC_APB_UART1_GPIO | RCC_APB_UART1, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHB_UART1_DMA, ENABLE);
 
-    UART1_GPIO_Init();
-    UART1_USART_Init(baudrate);
-    UART1_DMA_Init();
+    uart1_gpio_init();
+    uart1_usart_init(baudrate);
+    uart1_dma_init();
 
     USART_Cmd(USART1, ENABLE);
 }
 
-static void UART1_GPIO_Init(void)
+static void uart1_gpio_init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef gpio_init_struct;
 
     /* UART TX */
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Pin = UART1_TX_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+    gpio_init_struct.GPIO_Mode = GPIO_Mode_AF_PP;
+    gpio_init_struct.GPIO_Pin = UART1_TX_PIN;
+    gpio_init_struct.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(UART1_GPIO, &gpio_init_struct);
 
     /* UART RX */
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_InitStructure.GPIO_Pin = UART1_RX_PIN;
-    GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
+    gpio_init_struct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    gpio_init_struct.GPIO_Pin = UART1_RX_PIN;
+    GPIO_Init(UART1_GPIO, &gpio_init_struct);
 }
 
-static void UART1_USART_Init(uint32_t baudrate)
+static void uart1_usart_init(uint32_t baudrate)
 {
-    USART_InitTypeDef USART_InitStructure;
+    USART_InitTypeDef usart_init_struct;
 
-    USART_InitStructure.USART_BaudRate = baudrate;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
+    usart_init_struct.USART_BaudRate = baudrate;
+    usart_init_struct.USART_WordLength = USART_WordLength_8b;
+    usart_init_struct.USART_StopBits = USART_StopBits_1;
+    usart_init_struct.USART_Parity = USART_Parity_No;
+    usart_init_struct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    usart_init_struct.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
 
-    USART_Init(USART1, &USART_InitStructure);
+    USART_Init(USART1, &usart_init_struct);
 
     /* 使能USART DMA发送请求 */
     USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
 }
 
-void UART1_DMA_Init(void)
+void uart1_dma_init(void)
 {
-    DMA_InitTypeDef DMA_InitStructure;
+    DMA_InitTypeDef dma_init_struct;
 
     DMA_DeInit(UART1_TX_DMA_CHANNEL);
 
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&USART1->DR;
-    DMA_InitStructure.DMA_MemoryBaseAddr = 0; // 发送时再配置
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-    DMA_InitStructure.DMA_BufferSize = 0; // 发送时再配置
-    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+    dma_init_struct.DMA_PeripheralBaseAddr = (uint32_t)&USART1->DR;
+    dma_init_struct.DMA_MemoryBaseAddr = 0; // 发送时再配置
+    dma_init_struct.DMA_DIR = DMA_DIR_PeripheralDST;
+    dma_init_struct.DMA_BufferSize = 0; // 发送时再配置
+    dma_init_struct.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    dma_init_struct.DMA_MemoryInc = DMA_MemoryInc_Enable;
+    dma_init_struct.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    dma_init_struct.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    dma_init_struct.DMA_Mode = DMA_Mode_Normal;
+    dma_init_struct.DMA_Priority = DMA_Priority_Medium;
+    dma_init_struct.DMA_M2M = DMA_M2M_Disable;
 
-    DMA_Init(UART1_TX_DMA_CHANNEL, &DMA_InitStructure);
+    DMA_Init(UART1_TX_DMA_CHANNEL, &dma_init_struct);
 
     DMA_Cmd(UART1_TX_DMA_CHANNEL, DISABLE);
 }
 
-void UART1_Transmit_NonBlocking(uint8_t *TxBuffer, uint16_t TxLength)
+void uart1_transmit_non_blocking(uint8_t *tx_buffer, uint16_t tx_length)
 {
-    if (TxBuffer == NULL || TxLength == 0)
+    if (tx_buffer == NULL || tx_length == 0)
         return;
 
     /* 确保上一次非阻塞发送已经完成，避免覆盖进行中的 DMA */
-    while (!UART1_IsTransmitComplete())
+    while (!uart1_is_transmit_complete())
     {
     }
 
@@ -92,15 +92,15 @@ void UART1_Transmit_NonBlocking(uint8_t *TxBuffer, uint16_t TxLength)
     DMA_ClearFlag(DMA1_FLAG_TC4 | DMA1_FLAG_TE4 | DMA1_FLAG_HT4 | DMA1_FLAG_GL4);
 
     /* 配置发送地址和长度 */
-    UART1_TX_DMA_CHANNEL->CMAR = (uint32_t)TxBuffer;
-    UART1_TX_DMA_CHANNEL->CNDTR = TxLength;
+    UART1_TX_DMA_CHANNEL->CMAR = (uint32_t)tx_buffer;
+    UART1_TX_DMA_CHANNEL->CNDTR = tx_length;
 
     /* 启动DMA */
     DMA_Cmd(UART1_TX_DMA_CHANNEL, ENABLE);
     tx_busy = 1;
 }
 
-uint8_t UART1_IsTransmitComplete(void)
+uint8_t uart1_is_transmit_complete(void)
 {
     if (!tx_busy)
         return 1;
@@ -117,32 +117,32 @@ uint8_t UART1_IsTransmitComplete(void)
     return 0;
 }
 
-void UART1_Transmit(uint8_t *TxBuffer, uint16_t TxLength)
+void uart1_transmit(uint8_t *tx_buffer, uint16_t tx_length)
 {
-    UART1_Transmit_NonBlocking(TxBuffer, TxLength);
-    while (!UART1_IsTransmitComplete())
+    uart1_transmit_non_blocking(tx_buffer, tx_length);
+    while (!uart1_is_transmit_complete())
     {
     }
 }
 
-void UART1_SendString(char *str)
+void uart1_send_string(char *str)
 {
     if (str == NULL)
         return;
 
-    UART1_Transmit((uint8_t *)str, strlen(str));
+    uart1_transmit((uint8_t *)str, strlen(str));
 }
 
-void UART_Receive(uint8_t *RxBuffer, uint16_t RxLength)
+void uart_receive(uint8_t *rx_buffer, uint16_t rx_length)
 {
     uint16_t i;
 
-    for (i = 0; i < RxLength; i++)
+    for (i = 0; i < rx_length; i++)
     {
         while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET)
         {
         }
-        RxBuffer[i] = (uint8_t)USART_ReceiveData(USART1);
+        rx_buffer[i] = (uint8_t)USART_ReceiveData(USART1);
     }
 }
 
@@ -167,7 +167,7 @@ void _sys_exit(int x)
 int fputc(int ch, FILE *f)
 {
     uint8_t c = (uint8_t)ch;
-    UART1_Transmit(&c, 1);
+    uart1_transmit(&c, 1);
     return ch;
 }
 #endif

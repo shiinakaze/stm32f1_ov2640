@@ -25,12 +25,12 @@
 #define SW_I2C_ReadBit() GPIO_ReadInputDataBit(I2C_GPIOX, SDA_PIN)
 
 /*Software I2C*/
-void SW_I2C_Init(void);
-void SW_I2C_Start(void);
-void SW_I2C_Stop(void);
-uint8_t SW_I2C_TransmitByte(uint8_t Byte);
+void sw_i2c_init(void);
+void sw_i2c_start(void);
+void sw_i2c_stop(void);
+uint8_t sw_i2c_transmit_byte(uint8_t byte);
 
 /*Hardware I2C*/
-void HW_I2C_Init(void);
+void hw_i2c_init(void);
 
 #endif // _I2C_H

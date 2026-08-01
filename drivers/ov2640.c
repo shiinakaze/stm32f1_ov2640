@@ -1,6 +1,6 @@
 #include "ov2640.h"
 
-/* 双缓冲：缓冲区由上层提供（OV2640_SetFrameBuffer），驱动只持有指针。
+/* 双缓冲：缓冲区由上层提供（ov2640_set_frame_buffer），驱动只持有指针。
  * 采集写入一块缓冲时，DMA 正在发送另一块，互不冲突。 */
 static uint8_t *jpeg_buf[2] = {NULL, NULL};
 static uint32_t jpeg_buf_size = 0;
@@ -12,26 +12,26 @@ static uint8_t capture_idx = 0;
 static uint8_t *ready_frame_ptr = NULL;
 static uint32_t ready_frame_len = 0;
 
-void OV2640_SetFrameBuffer(uint8_t *buf0, uint8_t *buf1, uint32_t size)
+void ov2640_set_frame_buffer(uint8_t *buf0, uint8_t *buf1, uint32_t size)
 {
     jpeg_buf[0] = buf0;
     jpeg_buf[1] = buf1;
     jpeg_buf_size = size;
 }
 
-void OV2640_HW_Reset(void)
+void ov2640_hw_reset(void)
 {
     // Reset Camera
     GPIO_ResetBits(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, RESET_PIN);
-    Delay_ms(10);
+    delay_ms(10);
     GPIO_SetBits(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, RESET_PIN);
-    Delay_ms(10);
+    delay_ms(10);
 }
 
-void OV2640_SetPowerDownMode(BitAction BitVal)
+void ov2640_set_power_down_mode(BitAction bit_val)
 {
     // Set Device into Normal Mode
-    if (BitVal)
+    if (bit_val)
     {
         GPIO_SetBits(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, PWDN_PIN);
     }
@@ -41,22 +41,22 @@ void OV2640_SetPowerDownMode(BitAction BitVal)
     }
 }
 
-uint16_t OV2640_GetPID(void)
+uint16_t ov2640_get_pid(void)
 {
     SCCB_Write(0xFF, 0x01);
-    uint16_t PID = SCCB_Read(OV2640_SENSOR_PIDH);
-    PID <<= 8;
-    PID |= SCCB_Read(OV2640_SENSOR_PIDL);
-    return PID;
+    uint16_t pid = SCCB_Read(OV2640_SENSOR_PIDH);
+    pid <<= 8;
+    pid |= SCCB_Read(OV2640_SENSOR_PIDL);
+    return pid;
 }
 
-uint16_t OV2640_GetMID(void)
+uint16_t ov2640_get_mid(void)
 {
     SCCB_Write(0xFF, 0x01);
-    uint16_t MID = SCCB_Read(OV2640_SENSOR_MIDH);
-    MID <<= 8;
-    MID |= SCCB_Read(OV2640_SENSOR_MIDL);
-    return MID;
+    uint16_t mid = SCCB_Read(OV2640_SENSOR_MIDH);
+    mid <<= 8;
+    mid |= SCCB_Read(OV2640_SENSOR_MIDL);
+    return mid;
 }
 
 /**
@@ -64,54 +64,54 @@ uint16_t OV2640_GetMID(void)
  * @param  cfg  配置数组指针
  * @param  len  数组长度
  */
-void OV2640_Init_Config(const ov2640_cfg_item_t *cfg, uint16_t len)
+void ov2640_init_config(const ov2640_cfg_item_t *cfg, uint16_t len)
 {
     for (uint16_t i = 0; i < len; i++)
     {
         SCCB_Write(cfg[i].reg, cfg[i].val);
         if (cfg[i].delay_ms)
         {
-            Delay_ms(cfg[i].delay_ms);
+            delay_ms(cfg[i].delay_ms);
         }
     }
 }
 
-void OV2640_IO_Init(void)
+void ov2640_io_init(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB_OV2640, ENABLE);
 
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitTypeDef gpio_init_struct;
+    gpio_init_struct.GPIO_Speed = GPIO_Speed_50MHz;
     // RESET, output
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Pin = RESET_PIN;
-    GPIO_Init(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, &GPIO_InitStructure);
+    gpio_init_struct.GPIO_Mode = GPIO_Mode_Out_PP;
+    gpio_init_struct.GPIO_Pin = RESET_PIN;
+    GPIO_Init(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, &gpio_init_struct);
     // HREF, VSYNC, input
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_InitStructure.GPIO_Pin = HREF_PIN | VSYNC_PIN;
-    GPIO_Init(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, &GPIO_InitStructure);
+    gpio_init_struct.GPIO_Mode = GPIO_Mode_IPU;
+    gpio_init_struct.GPIO_Pin = HREF_PIN | VSYNC_PIN;
+    GPIO_Init(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, &gpio_init_struct);
     // PCLK, input
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_InitStructure.GPIO_Pin = PCLK_PIN;
-    GPIO_Init(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, &GPIO_InitStructure);
+    gpio_init_struct.GPIO_Mode = GPIO_Mode_IPU;
+    gpio_init_struct.GPIO_Pin = PCLK_PIN;
+    GPIO_Init(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, &gpio_init_struct);
     // PWDN, output
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Pin = PWDN_PIN;
-    GPIO_Init(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, &GPIO_InitStructure);
+    gpio_init_struct.GPIO_Mode = GPIO_Mode_Out_PP;
+    gpio_init_struct.GPIO_Pin = PWDN_PIN;
+    GPIO_Init(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, &gpio_init_struct);
     // DATA, input
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_InitStructure.GPIO_Pin = DATA0_PIN | DATA1_PIN | DATA2_PIN | DATA3_PIN | DATA4_PIN | DATA5_PIN | DATA6_PIN | DATA7_PIN;
-    GPIO_Init(DATA_GPIO, &GPIO_InitStructure);
+    gpio_init_struct.GPIO_Mode = GPIO_Mode_IPU;
+    gpio_init_struct.GPIO_Pin = DATA0_PIN | DATA1_PIN | DATA2_PIN | DATA3_PIN | DATA4_PIN | DATA5_PIN | DATA6_PIN | DATA7_PIN;
+    GPIO_Init(DATA_GPIO, &gpio_init_struct);
 }
 
-void OV2640_Set_Output_JPEG(void)
+void ov2640_set_output_jpeg(void)
 {
-    // OV2640_Init_Config(atk_mc2640_set_yuv422_cfg, sizeof(atk_mc2640_set_yuv422_cfg) / sizeof(ov2640_cfg_item_t));
-    // OV2640_Init_Config(atk_mc2640_set_jpeg_cfg, sizeof(atk_mc2640_set_jpeg_cfg) / sizeof(ov2640_cfg_item_t));
-    OV2640_Init_Config(ov2640_set_jpeg_cfg, sizeof(ov2640_set_jpeg_cfg) / sizeof(ov2640_cfg_item_t));
+    // ov2640_init_config(atk_mc2640_set_yuv422_cfg, sizeof(atk_mc2640_set_yuv422_cfg) / sizeof(ov2640_cfg_item_t));
+    // ov2640_init_config(atk_mc2640_set_jpeg_cfg, sizeof(atk_mc2640_set_jpeg_cfg) / sizeof(ov2640_cfg_item_t));
+    ov2640_init_config(ov2640_set_jpeg_cfg, sizeof(ov2640_set_jpeg_cfg) / sizeof(ov2640_cfg_item_t));
 }
 
-void OV2640_Set_Output_Size(uint16_t width, uint16_t height)
+void ov2640_set_output_size(uint16_t width, uint16_t height)
 {
     uint16_t output_width;
     uint16_t output_height;
@@ -127,7 +127,7 @@ void OV2640_Set_Output_Size(uint16_t width, uint16_t height)
     SCCB_Write(OV2640_DSP_RESET, 0x00);
 }
 
-void OV2640_Capture(void)
+void ov2640_capture(void)
 {
     uint32_t idx = 0;
     uint32_t jpeg_start, jpeg_end;
@@ -209,7 +209,7 @@ void OV2640_Capture(void)
     capture_idx ^= 1;
 }
 
-uint8_t *OV2640_GetReadyFrame(uint32_t *len)
+uint8_t *ov2640_get_ready_frame(uint32_t *len)
 {
     if (len != NULL)
     {
@@ -218,21 +218,21 @@ uint8_t *OV2640_GetReadyFrame(uint32_t *len)
     return ready_frame_ptr;
 }
 
-void OV2640_Init(void)
+void ov2640_init(void)
 {
-    OV2640_IO_Init();
-    OV2640_HW_Reset();
-    SW_SCCB_Init();
+    ov2640_io_init();
+    ov2640_hw_reset();
+    sw_sccb_init();
 
-    // OV2640_Init_Config(atk_mc2640_init_uxga_cfg, sizeof(atk_mc2640_init_uxga_cfg) / sizeof(ov2640_cfg_item_t));
-    OV2640_Init_Config(svga_rgb565_25fps_cfg, sizeof(svga_rgb565_25fps_cfg) / sizeof(ov2640_cfg_item_t));
+    // ov2640_init_config(atk_mc2640_init_uxga_cfg, sizeof(atk_mc2640_init_uxga_cfg) / sizeof(ov2640_cfg_item_t));
+    ov2640_init_config(svga_rgb565_25fps_cfg, sizeof(svga_rgb565_25fps_cfg) / sizeof(ov2640_cfg_item_t));
 
-    OV2640_Set_Output_JPEG();
+    ov2640_set_output_jpeg();
 
     SCCB_Write(0XFF, 0x01);
     SCCB_Write(0X11, 0x00); // CLKRC
     SCCB_Write(0XFF, 0x00);
     SCCB_Write(0XD3, 0x64); // R_DVP_SP
 
-    OV2640_Set_Output_Size(640, 360);
+    ov2640_set_output_size(640, 360);
 }

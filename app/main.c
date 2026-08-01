@@ -15,8 +15,8 @@ static uint8_t jpeg_buffer[2][JPEG_BUFFER_SIZE];
  * SystemInit 已将时钟设为 72MHz，此处切换到 128MHz。
  * AHB=128MHz, APB1=32MHz(/4), APB2=64MHz(/2), Flash 2WS+预取。
  * 超出 STM32F103 规格（额定 72MHz），稳定性不保证；
- * 若不稳定请注释掉 main 中的 SetSysClockTo128() 调用。 */
-static void SetSysClockTo128(void)
+ * 若不稳定请注释掉 main 中的 set_sys_clock_to_128() 调用。 */
+static void set_sys_clock_to_128(void)
 {
     /* 1. 切换系统时钟到 HSE，脱离 PLL（PLL 运行时不能改倍频） */
     RCC->CFGR = (RCC->CFGR & ~(uint32_t)RCC_CFGR_SW) | (uint32_t)RCC_CFGR_SW_HSE;
@@ -61,30 +61,30 @@ int main(void)
     uint8_t *frame;
     uint32_t len;
 
-    SetSysClockTo128();
+    set_sys_clock_to_128();
 
-    OLED_Init();
-    UART1_Init(1500000);
-    OV2640_Init();
-    OV2640_SetFrameBuffer(jpeg_buffer[0], jpeg_buffer[1], JPEG_BUFFER_SIZE);
-    OLED_ShowHexNum(1, 1, OV2640_GetPID(), 4);
-    OLED_ShowHexNum(2, 1, OV2640_GetMID(), 4);
+    oled_init();
+    uart1_init(1500000);
+    ov2640_init();
+    ov2640_set_frame_buffer(jpeg_buffer[0], jpeg_buffer[1], JPEG_BUFFER_SIZE);
+    oled_show_hex_num(1, 1, ov2640_get_pid(), 4);
+    oled_show_hex_num(2, 1, ov2640_get_mid(), 4);
 
     while (1)
     {
         /* 采集一帧到当前空闲缓冲（与上一次 DMA 发送并行） */
-        OV2640_Capture();
+        ov2640_capture();
 
         /* 等待上一帧 DMA 发送完毕，再启动新帧发送 */
-        while (!UART1_IsTransmitComplete())
+        while (!uart1_is_transmit_complete())
         {
         }
 
-        frame = OV2640_GetReadyFrame(&len);
+        frame = ov2640_get_ready_frame(&len);
         if (frame != NULL && len > 0)
         {
             /* 非阻塞启动 DMA 发送；下一轮采集会写入另一块缓冲 */
-            UART1_Transmit_NonBlocking(frame, (uint16_t)len);
+            uart1_transmit_non_blocking(frame, (uint16_t)len);
         }
     }
 }

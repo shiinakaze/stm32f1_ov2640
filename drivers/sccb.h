@@ -14,13 +14,13 @@
 #define SW_SIO_C_Write(BIT_VALUE) GPIO_WriteBit(SCCB_GPIO, SIO_C_PIN, BIT_VALUE)
 #define SW_SIO_D_Write(BIT_VALUE) GPIO_WriteBit(SCCB_GPIO, SIO_D_PIN, BIT_VALUE)
 #define SW_SIO_D_Read() GPIO_ReadInputDataBit(SCCB_GPIO, SIO_D_PIN)
-#define SW_SCCB_Delay() Delay_us(5)
+#define SW_SCCB_Delay() delay_us(5)
 
-void SW_SCCB_Init(void);
-void SW_SCCB_WriteReg(uint8_t id_address, uint8_t sub_address, uint8_t data);
-uint8_t SW_SCCB_ReadReg(uint8_t id_address, uint8_t sub_address);
+void sw_sccb_init(void);
+void sw_sccb_write_reg(uint8_t id_address, uint8_t sub_address, uint8_t data);
+uint8_t sw_sccb_read_reg(uint8_t id_address, uint8_t sub_address);
 
-// void SCCB_Init(void);
-// void SCCB_WriteReg(uint8_t id_address, uint8_t sub_address, uint8_t data);
-// uint8_t SCCB_ReadReg(uint8_t id_address, uint8_t sub_address);
+// void sccb_init(void);
+// void sccb_write_reg(uint8_t id_address, uint8_t sub_address, uint8_t data);
+// uint8_t sccb_read_reg(uint8_t id_address, uint8_t sub_address);
 #endif // _SCCB_H
