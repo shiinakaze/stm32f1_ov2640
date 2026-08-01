@@ -1,6 +1,6 @@
 #include "delay.h"
 
-#define MCU_SYSCLK 72 //Set MCU System clock 72M
+#define MCU_SYSCLK 128 //Set MCU System clock 128M (overclocked)
 
 /**
   * @brief  Microsecond delay
