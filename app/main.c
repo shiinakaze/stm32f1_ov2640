@@ -6,6 +6,11 @@
 
 extern uint32_t SystemCoreClock;
 
+/* 双缓冲帧存储：由上层定义，注入 OV2640 驱动。
+ * 每块 8KB，共 16KB（STM32F103C8 的 20KB SRAM 可容纳）。 */
+#define JPEG_BUFFER_SIZE (8 * 1024)
+static uint8_t jpeg_buffer[2][JPEG_BUFFER_SIZE];
+
 /* 运行时超频到 128MHz（HSE 8MHz × PLL16）。
  * SystemInit 已将时钟设为 72MHz，此处切换到 128MHz。
  * AHB=128MHz, APB1=32MHz(/4), APB2=64MHz(/2), Flash 2WS+预取。
@@ -61,6 +66,7 @@ int main(void)
     OLED_Init();
     UART1_Init(1500000);
     OV2640_Init();
+    OV2640_SetFrameBuffer(jpeg_buffer[0], jpeg_buffer[1], JPEG_BUFFER_SIZE);
     OLED_ShowHexNum(1, 1, OV2640_GetPID(), 4);
     OLED_ShowHexNum(2, 1, OV2640_GetMID(), 4);
 

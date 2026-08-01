@@ -1,18 +1,23 @@
 #include "ov2640.h"
 
-/* 双缓冲：采集与 DMA 发送可并行进行。
- * 受限于 STM32F103C8 的 20KB RAM，每缓冲 8KB（共 16KB）。
- * 320x240 JPEG 一般在 8KB 以内；如不足可调小 JPEG 质量或缩小尺寸。 */
-#define JPEG_BUFFER_SIZE (8 * 1024)
-
-static uint8_t jpeg_buffer[2][JPEG_BUFFER_SIZE];
+/* 双缓冲：缓冲区由上层提供（OV2640_SetFrameBuffer），驱动只持有指针。
+ * 采集写入一块缓冲时，DMA 正在发送另一块，互不冲突。 */
+static uint8_t *jpeg_buf[2] = {NULL, NULL};
+static uint32_t jpeg_buf_size = 0;
 
 /* 当前写入的缓冲索引；采集完成后指向刚写满并待发送的帧 */
 static uint8_t capture_idx = 0;
 
-/* 最近一次采集好的 JPEG 帧信息（指向 jpeg_buffer[!capture_idx] 内部） */
+/* 最近一次采集好的 JPEG 帧信息 */
 static uint8_t *ready_frame_ptr = NULL;
 static uint32_t ready_frame_len = 0;
+
+void OV2640_SetFrameBuffer(uint8_t *buf0, uint8_t *buf1, uint32_t size)
+{
+    jpeg_buf[0] = buf0;
+    jpeg_buf[1] = buf1;
+    jpeg_buf_size = size;
+}
 
 void OV2640_HW_Reset(void)
 {
@@ -127,7 +132,7 @@ void OV2640_Capture(void)
     uint32_t idx = 0;
     uint32_t jpeg_start, jpeg_end;
     uint8_t end_found;
-    uint8_t *buf = jpeg_buffer[capture_idx];
+    uint8_t *buf = jpeg_buf[capture_idx];
 
     /* 先等当前帧结束（确保不会从帧中途开始采集，避免撕裂/闪烁） */
     while (OV2640_VSYNC == 1)
@@ -145,7 +150,7 @@ void OV2640_Capture(void)
             while (OV2640_PCLK == 0) // 等待 PCLK 上升沿并读取数据
             {
             }
-            if (idx < JPEG_BUFFER_SIZE)
+            if (idx < jpeg_buf_size)
             {
                 buf[idx] = OV2640_READ_DATA();
             }
@@ -157,9 +162,9 @@ void OV2640_Capture(void)
     }
 
     /* 防止缓冲溢出：超过容量的数据被丢弃，但 idx 继续计数 */
-    if (idx > JPEG_BUFFER_SIZE)
+    if (idx > jpeg_buf_size)
     {
-        idx = JPEG_BUFFER_SIZE;
+        idx = jpeg_buf_size;
     }
 
     /* 定位 JPEG 起始标记 FF D8 */
@@ -229,5 +234,5 @@ void OV2640_Init(void)
     SCCB_Write(0XFF, 0x00);
     SCCB_Write(0XD3, 0x64); // R_DVP_SP
 
-    OV2640_Set_Output_Size(320, 240);
+    OV2640_Set_Output_Size(640, 360);
 }
