@@ -4,11 +4,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include <stdio.h>
 #include "main.h"
 #include "delay.h"
 #include "sccb.h"
-#include "uart.h"
 #include "ov2640_cfg.h"
 
 #define OV2640_DEVICE_ADDRESS 0x60
@@ -51,7 +50,8 @@ uint16_t OV2640_GetMID(void);
 void OV2640_Init(void);
 void OV2640_Init_Config(const ov2640_cfg_item_t *cfg, uint16_t len);
 void OV2640_Set_Output_Size(uint16_t width, uint16_t height);
-void OV2640_Test_Capture_UART(void);
+void OV2640_Capture(void);
+uint8_t *OV2640_GetReadyFrame(uint32_t *len);
 
 #ifdef __cplusplus
 }

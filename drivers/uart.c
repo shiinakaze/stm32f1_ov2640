@@ -3,6 +3,9 @@
 static void UART1_GPIO_Init(void);
 static void UART1_USART_Init(uint32_t baudrate);
 
+/* 标记当前是否有一次非阻塞 DMA 发送正在进行 */
+static volatile uint8_t tx_busy = 0;
+
 void UART1_Init(uint32_t baudrate)
 {
     /* 时钟使能 */
@@ -72,10 +75,15 @@ void UART1_DMA_Init(void)
     DMA_Cmd(UART1_TX_DMA_CHANNEL, DISABLE);
 }
 
-void UART1_Transmit(uint8_t *TxBuffer, uint16_t TxLength)
+void UART1_Transmit_NonBlocking(uint8_t *TxBuffer, uint16_t TxLength)
 {
     if (TxBuffer == NULL || TxLength == 0)
         return;
+
+    /* 确保上一次非阻塞发送已经完成，避免覆盖进行中的 DMA */
+    while (!UART1_IsTransmitComplete())
+    {
+    }
 
     /* 关闭DMA，准备重新配置 */
     DMA_Cmd(UART1_TX_DMA_CHANNEL, DISABLE);
@@ -89,21 +97,32 @@ void UART1_Transmit(uint8_t *TxBuffer, uint16_t TxLength)
 
     /* 启动DMA */
     DMA_Cmd(UART1_TX_DMA_CHANNEL, ENABLE);
+    tx_busy = 1;
+}
 
-    /* 等待发送完成 */
-    while (DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET)
+uint8_t UART1_IsTransmitComplete(void)
+{
+    if (!tx_busy)
+        return 1;
+
+    /* DMA 传输完成，且串口移位寄存器把最后一字节发完 */
+    if (DMA_GetFlagStatus(DMA1_FLAG_TC4) != RESET &&
+        USART_GetFlagStatus(USART1, USART_FLAG_TC) != RESET)
+    {
+        DMA_Cmd(UART1_TX_DMA_CHANNEL, DISABLE);
+        DMA_ClearFlag(DMA1_FLAG_TC4);
+        tx_busy = 0;
+        return 1;
+    }
+    return 0;
+}
+
+void UART1_Transmit(uint8_t *TxBuffer, uint16_t TxLength)
+{
+    UART1_Transmit_NonBlocking(TxBuffer, TxLength);
+    while (!UART1_IsTransmitComplete())
     {
     }
-
-    /* 清完成标志 */
-    DMA_ClearFlag(DMA1_FLAG_TC4);
-
-    /* 等待串口真正发完最后一个字节 */
-    while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET)
-    {
-    }
-
-    DMA_Cmd(UART1_TX_DMA_CHANNEL, DISABLE);
 }
 
 void UART1_SendString(char *str)

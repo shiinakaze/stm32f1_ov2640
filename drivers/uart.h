@@ -18,6 +18,8 @@
 void UART1_Init(uint32_t baudrate);
 void UART1_DMA_Init(void);
 void UART1_Transmit(uint8_t *TxBuffer, uint16_t TxLength);
+void UART1_Transmit_NonBlocking(uint8_t *TxBuffer, uint16_t TxLength);
+uint8_t UART1_IsTransmitComplete(void);
 void UART1_SendString(char *str);
 void UART_Receive(uint8_t *RxBuffer, uint16_t RxLength);
 

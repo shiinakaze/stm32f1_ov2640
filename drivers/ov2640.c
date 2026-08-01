@@ -1,6 +1,18 @@
 #include "ov2640.h"
 
-uint8_t jpeg_buffer[16 * 1024] = {0};
+/* 双缓冲：采集与 DMA 发送可并行进行。
+ * 受限于 STM32F103C8 的 20KB RAM，每缓冲 8KB（共 16KB）。
+ * 320x240 JPEG 一般在 8KB 以内；如不足可调小 JPEG 质量或缩小尺寸。 */
+#define JPEG_BUFFER_SIZE (8 * 1024)
+
+static uint8_t jpeg_buffer[2][JPEG_BUFFER_SIZE];
+
+/* 当前写入的缓冲索引；采集完成后指向刚写满并待发送的帧 */
+static uint8_t capture_idx = 0;
+
+/* 最近一次采集好的 JPEG 帧信息（指向 jpeg_buffer[!capture_idx] 内部） */
+static uint8_t *ready_frame_ptr = NULL;
+static uint32_t ready_frame_len = 0;
 
 void OV2640_HW_Reset(void)
 {
@@ -110,43 +122,95 @@ void OV2640_Set_Output_Size(uint16_t width, uint16_t height)
     SCCB_Write(OV2640_DSP_RESET, 0x00);
 }
 
-void OV2640_Test_Capture_UART(void)
+void OV2640_Capture(void)
 {
-    uint32_t buffer_inedex = 0;
-    uint32_t jpeg_valid_start, jpeg_valid_end = 0;
-    while (OV2640_VSYNC == 0) // wait for new frame VSYNC rising edge
+    uint32_t idx = 0;
+    uint32_t jpeg_start, jpeg_end;
+    uint8_t end_found;
+    uint8_t *buf = jpeg_buffer[capture_idx];
+
+    /* 先等当前帧结束（确保不会从帧中途开始采集，避免撕裂/闪烁） */
+    while (OV2640_VSYNC == 1)
     {
     }
-    while (OV2640_VSYNC == 1) // wait for new frame VSYNC falling edge
+    /* 等待新帧 VSYNC 上升沿 */
+    while (OV2640_VSYNC == 0)
     {
-        while (OV2640_HREF == 1) // when HREF high, read row
+    }
+    /* VSYNC 高电平期间按行读取整帧 */
+    while (OV2640_VSYNC == 1)
+    {
+        while (OV2640_HREF == 1) // 当 HREF 为高，读取一行
         {
-            while (OV2640_PCLK == 0) // wait for PCLK rising edge and read data
+            while (OV2640_PCLK == 0) // 等待 PCLK 上升沿并读取数据
             {
             }
-            jpeg_buffer[buffer_inedex] = OV2640_READ_DATA();
-            buffer_inedex++;
-            while (OV2640_PCLK == 1) //  wait for PCLK falling edge, update data
+            if (idx < JPEG_BUFFER_SIZE)
+            {
+                buf[idx] = OV2640_READ_DATA();
+            }
+            idx++;
+            while (OV2640_PCLK == 1) // 等待 PCLK 下降沿，数据更新
             {
             }
         }
     }
 
-    for (jpeg_valid_start = 0; jpeg_valid_start < buffer_inedex; jpeg_valid_start++)
+    /* 防止缓冲溢出：超过容量的数据被丢弃，但 idx 继续计数 */
+    if (idx > JPEG_BUFFER_SIZE)
     {
-        if (jpeg_buffer[jpeg_valid_start] == 0xFF && jpeg_buffer[jpeg_valid_start + 1] == 0xD8)
-        {
+        idx = JPEG_BUFFER_SIZE;
+    }
 
-            for (jpeg_valid_end = jpeg_valid_start; jpeg_valid_end < buffer_inedex; jpeg_valid_end++)
-            {
-                if (jpeg_buffer[jpeg_valid_end] == 0xD9 && jpeg_buffer[jpeg_valid_end - 1] == 0xFF)
-                {
-                    UART1_Transmit(jpeg_buffer + jpeg_valid_start, jpeg_valid_end - jpeg_valid_start + 1);
-                    break;
-                }
-            }
+    /* 定位 JPEG 起始标记 FF D8 */
+    for (jpeg_start = 0; jpeg_start + 1 < idx; jpeg_start++)
+    {
+        if (buf[jpeg_start] == 0xFF && buf[jpeg_start + 1] == 0xD8)
+        {
+            break;
         }
     }
+    if (jpeg_start + 1 >= idx)
+    {
+        /* 未找到 JPEG 起始，丢弃本帧 */
+        ready_frame_ptr = NULL;
+        ready_frame_len = 0;
+        return;
+    }
+
+    /* 定位 JPEG 结束标记 FF D9 */
+    end_found = 0;
+    for (jpeg_end = jpeg_start + 1; jpeg_end + 1 < idx; jpeg_end++)
+    {
+        if (buf[jpeg_end] == 0xFF && buf[jpeg_end + 1] == 0xD9)
+        {
+            jpeg_end += 2; // 包含 FF D9
+            end_found = 1;
+            break;
+        }
+    }
+    if (!end_found)
+    {
+        /* 未找到结束标记（JPEG 不完整/被截断），丢弃本帧避免解码异常 */
+        ready_frame_ptr = NULL;
+        ready_frame_len = 0;
+        return;
+    }
+
+    /* 记录待发送帧，并切换缓冲：下一帧写入另一块，
+     * 这样 DMA 发送本帧时不会与下一帧采集冲突 */
+    ready_frame_ptr = buf + jpeg_start;
+    ready_frame_len = jpeg_end - jpeg_start;
+    capture_idx ^= 1;
+}
+
+uint8_t *OV2640_GetReadyFrame(uint32_t *len)
+{
+    if (len != NULL)
+    {
+        *len = ready_frame_len;
+    }
+    return ready_frame_ptr;
 }
 
 void OV2640_Init(void)
@@ -165,5 +229,5 @@ void OV2640_Init(void)
     SCCB_Write(0XFF, 0x00);
     SCCB_Write(0XD3, 0x64); // R_DVP_SP
 
-    OV2640_Set_Output_Size(640, 480);
+    OV2640_Set_Output_Size(320, 240);
 }
