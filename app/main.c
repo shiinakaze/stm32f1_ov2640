@@ -15,8 +15,8 @@ static uint8_t jpeg_buffer[2][JPEG_BUFFER_SIZE];
  * SystemInit 已将时钟设为 72MHz，此处切换到 128MHz。
  * AHB=128MHz, APB1=32MHz(/4), APB2=64MHz(/2), Flash 2WS+预取。
  * 超出 STM32F103 规格（额定 72MHz），稳定性不保证；
- * 若不稳定请注释掉 main 中的 set_sys_clock_to_128() 调用。 */
-static void set_sys_clock_to_128(void)
+ * 若不稳定请注释掉 main 中的 sys_clock_set_to_128() 调用。 */
+static void sys_clock_set_to_128(void)
 {
     /* 1. 切换系统时钟到 HSE，脱离 PLL（PLL 运行时不能改倍频） */
     RCC->CFGR = (RCC->CFGR & ~(uint32_t)RCC_CFGR_SW) | (uint32_t)RCC_CFGR_SW_HSE;
@@ -61,7 +61,7 @@ int main(void)
     uint8_t *frame;
     uint32_t len;
 
-    set_sys_clock_to_128();
+    sys_clock_set_to_128();
 
     oled_init();
     uart1_init(1500000);

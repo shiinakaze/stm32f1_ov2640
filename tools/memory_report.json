@@ -1,0 +1,169 @@
+{
+  "meta": {
+    "mcu": "STM32F103C8",
+    "description": "STM32F103C8 (Cortex-M3, 64KB/20KB)",
+    "flash_total": 65536,
+    "sram_total": 20480,
+    "ccm": 0,
+    "generated": "2026-08-02T05:53:48.613174"
+  },
+  "summary": {
+    "flash_used": 11416,
+    "flash_pct": 17.42,
+    "sram_used": 19000,
+    "sram_pct": 92.77
+  },
+  "breakdown": {
+    "code": 8768,
+    "ro_data": 1056,
+    "rw_data": 1592,
+    "zi_data": 17408
+  },
+  "modules": [
+    {
+      "name": "core_cm3.o",
+      "code": 0,
+      "inline_data": 0,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "delay.o",
+      "code": 90,
+      "inline_data": 0,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "i2c.o",
+      "code": 368,
+      "inline_data": 18,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "main.o",
+      "code": 304,
+      "inline_data": 24,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 16384
+    },
+    {
+      "name": "oled.o",
+      "code": 756,
+      "inline_data": 4,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "oled_font.o",
+      "code": 0,
+      "inline_data": 0,
+      "ro_data": 0,
+      "rw_data": 1520,
+      "zi_data": 0
+    },
+    {
+      "name": "ov2640.o",
+      "code": 840,
+      "inline_data": 38,
+      "ro_data": 0,
+      "rw_data": 24,
+      "zi_data": 0
+    },
+    {
+      "name": "ov2640_config.o",
+      "code": 0,
+      "inline_data": 0,
+      "ro_data": 788,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "sccb.o",
+      "code": 732,
+      "inline_data": 14,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "startup_stm32f10x_md.o",
+      "code": 36,
+      "inline_data": 8,
+      "ro_data": 236,
+      "rw_data": 0,
+      "zi_data": 1024
+    },
+    {
+      "name": "stm32f10x_dma.o",
+      "code": 596,
+      "inline_data": 8,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "stm32f10x_gpio.o",
+      "code": 860,
+      "inline_data": 38,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "stm32f10x_i2c.o",
+      "code": 1028,
+      "inline_data": 16,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "stm32f10x_it.o",
+      "code": 26,
+      "inline_data": 0,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "stm32f10x_rcc.o",
+      "code": 932,
+      "inline_data": 36,
+      "ro_data": 0,
+      "rw_data": 20,
+      "zi_data": 0
+    },
+    {
+      "name": "stm32f10x_usart.o",
+      "code": 1032,
+      "inline_data": 22,
+      "ro_data": 0,
+      "rw_data": 0,
+      "zi_data": 0
+    },
+    {
+      "name": "system_stm32f10x.o",
+      "code": 480,
+      "inline_data": 38,
+      "ro_data": 0,
+      "rw_data": 20,
+      "zi_data": 0
+    },
+    {
+      "name": "uart.o",
+      "code": 496,
+      "inline_data": 18,
+      "ro_data": 0,
+      "rw_data": 8,
+      "zi_data": 0
+    }
+  ],
+  "stack_size": 1024
+}

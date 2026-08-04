@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STM32 Memory Analysis — STM32F103C8</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ========== 基础 + 浅色主题 ========== */
+:root {
+    --bg: #f1f5f9; --surface: #fff; --text: #1e293b; --text-secondary: #64748b;
+    --border: #e2e8f0; --hover: #f8fafc; --table-header: #f8fafc;
+    --code-bg: #f1f5f9; --shadow: rgba(0,0,0,0.08);
+}
+[data-theme="dark"] {
+    --bg: #0f172a; --surface: #1e293b; --text: #e2e8f0; --text-secondary: #94a3b8;
+    --border: #334155; --hover: #1e293b; --table-header: #1e293b;
+    --code-bg: #0f172a; --shadow: rgba(0,0,0,0.3);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6; transition: background 0.3s, color 0.3s;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+/* 顶部栏 */
+.topbar {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 24px;
+}
+.topbar .brand { font-size: 0.85rem; color: var(--text-secondary); }
+.topbar .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+    padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); cursor: pointer; font-size: 0.8rem; transition: all 0.2s;
+    display: flex; align-items: center; gap: 4px;
+}
+.btn:hover { background: var(--hover); }
+.btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+/* 头部 */
+.header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    color: #fff; padding: 32px 24px; border-radius: 12px; margin-bottom: 24px;
+}
+.header h1 { font-size: 1.6rem; font-weight: 700; }
+.header .sub { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+.header .meta { font-size: 0.8rem; opacity: 0.65; margin-top: 8px; }
+/* 选项卡 */
+.tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid var(--border); }
+.tab-btn {
+    padding: 10px 20px; border: none; background: none; color: var(--text-secondary);
+    cursor: pointer; font-size: 0.9rem; font-weight: 500; border-bottom: 2px solid transparent;
+    margin-bottom: -2px; transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+/* 卡片 */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card {
+    background: var(--surface); border-radius: 10px; padding: 20px;
+    box-shadow: 0 1px 3px var(--shadow); border: 1px solid var(--border);
+}
+.card h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 8px; }
+.card .value { font-size: 1.5rem; font-weight: 700; }
+.card .sub-value { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; }
+.card .bar-bg { height: 8px; background: var(--border); border-radius: 4px; margin-top: 12px; overflow: hidden; }
+.card .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+/* 面板 */
+.panel {
+    background: var(--surface); border-radius: 10px; padding: 24px;
+    box-shadow: 0 1px 3px var(--shadow); border: 1px solid var(--border);
+    margin-bottom: 24px;
+}
+.panel h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+/* 图表 */
+.chart-wrap { max-width: 480px; margin: 0 auto; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 700px) { .chart-row { grid-template-columns: 1fr; } }
+/* 表格 */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th { background: var(--table-header); text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border);
+      font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td.name { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+tr:hover td { background: var(--hover); }
+/* 图例 */
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: 0.8rem; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+/* 告警 */
+.alert {
+    padding: 12px 16px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+}
+.alert-critical { background: #fde8e8; color: #991b1b; border: 1px solid #fca5a5; }
+.alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.alert-icon { font-size: 1.2rem; }
+[data-theme="dark"] .alert-critical { background: #451a1a; color: #fca5a5; border-color: #7f1d1d; }
+[data-theme="dark"] .alert-warning { background: #452c0a; color: #fcd34d; border-color: #78350f; }
+/* 页脚 */
+.footer { text-align: center; font-size: 0.75rem; color: var(--text-secondary); margin-top: 32px; padding: 16px; }
+/* 徽章 */
+.badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600;
+}
+.badge-ok { background: #d1fae5; color: #065f46; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-critical { background: #fde8e8; color: #991b1b; }
+[data-theme="dark"] .badge-ok { background: #064e3b; color: #6ee7b7; }
+[data-theme="dark"] .badge-warning { background: #78350f; color: #fcd34d; }
+[data-theme="dark"] .badge-critical { background: #7f1d1d; color: #fca5a5; }
+/* 打印 */
+@media print {
+    body { background: #fff; color: #000; font-size: 11pt; }
+    .topbar, .tabs, .btn { display: none !important; }
+    .tab-panel { display: block !important; page-break-inside: avoid; }
+    .header { background: #fff !important; color: #000 !important; border: 1px solid #ccc; }
+    .panel { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    .card { box-shadow: none; border: 1px solid #ccc; }
+    .container { max-width: 100%; padding: 0; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- 顶部栏 -->
+<div class="topbar">
+    <div class="brand">STM32 Memory Analyzer v2.0</div>
+    <div class="actions">
+        <button class="btn" onclick="toggleTheme()" title="Toggle dark mode">&#9788; Dark mode</button>
+        <button class="btn" onclick="window.print()" title="Print report">&#9113; Print</button>
+        <button class="btn" onclick="exportJSON()" title="Export JSON">&#8615; JSON</button>
+        <button class="btn" onclick="exportCSV()" title="Export CSV">&#8615; CSV</button>
+    </div>
+</div>
+
+<!-- 头部 -->
+<div class="header">
+    <h1>STM32 Memory Analysis Report</h1>
+    <div class="sub">STM32F103C8 (Cortex-M3, 64KB/20KB)  ·  Flash: 64 KB  ·  SRAM: 20 KB</div>
+    <div class="meta">Generated: 2026-08-03 00:55:21  ·  Alert thresholds: Caution 70% / Warning 85% / Critical 95%</div>
+</div>
+
+<!-- 告警 -->
+<div class="alert alert-warning"><span class="alert-icon">&#9888;</span> SRAM usage 92.77%, watch remaining memory to avoid blocking future features.</div>
+
+<!-- 概览卡片 -->
+<div class="cards">
+    <div class="card">
+        <h3>Flash Usage</h3>
+        <div class="value" style="color:#27ae60">17.4%</div>
+        <div class="sub-value">11.15 KB (11,416 B) / 64 KB</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:17.4%;background:#27ae60"></div></div>
+    </div>
+    <div class="card">
+        <h3>SRAM Usage</h3>
+        <div class="value" style="color:#f39c12">92.8%</div>
+        <div class="sub-value">18.55 KB (19,000 B) / 20 KB</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:92.8%;background:#f39c12"></div></div>
+    </div>
+    <div class="card">
+        <h3>Code</h3>
+        <div class="value">8.56 KB</div>
+        <div class="sub-value">Executable code</div>
+    </div>
+    <div class="card">
+        <h3>ZI-Data</h3>
+        <div class="value">17.00 KB</div>
+        <div class="sub-value">BSS + stack + heap</div>
+    </div>
+    <div class="card">
+        <h3>Stack (Stack)</h3>
+        <div class="value">1.00 KB</div>
+        <div class="sub-value">Defined in startup</div>
+    </div>
+    
+</div>
+
+<!-- 选项卡导航 -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+    <button class="tab-btn" onclick="switchTab('details')">Details</button>
+    <button class="tab-btn" onclick="switchTab('modules')">Modules (18)</button>
+    <button class="tab-btn" onclick="switchTab('regions')">Regions</button>
+</div>
+
+<!-- Tab: 概览 -->
+<div class="tab-panel active" id="tab-overview">
+    <div class="panel">
+        <h2>Storage distribution</h2>
+        <div class="chart-row">
+            <div class="chart-wrap">
+                <canvas id="flashChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#2563eb"></span> Code</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span> RO-Data</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> RW-Data</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#cbd5e1"></span> Free</div>
+                </div>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="ramChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> RW-Data</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> ZI-Data</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#cbd5e1"></span> Free</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="panel">
+        <h2>SRAM breakdown</h2>
+        <div class="chart-row">
+            <div class="chart-wrap">
+                <canvas id="ramDetailChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6"></span> .bss</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> .data</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Stack</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#cbd5e1"></span> Free</div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>Region</th><th>Size</th><th>Share</th></tr>
+                    <tr><td>.bss (uninitialized globals)</td><td>16,384 B</td><td><span class="badge badge-ok">80.0%</span></td></tr>
+                    <tr><td>.data (initialized globals)</td><td>1,592 B</td><td><span class="badge badge-ok">7.8%</span></td></tr>
+                    <tr><td>Stack (call stack)</td><td>1,024 B</td><td><span class="badge badge-ok">5.0%</span></td></tr>
+                    
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab: 数据明细 -->
+<div class="tab-panel" id="tab-details">
+    <div class="panel">
+        <h2>Memory detail</h2>
+        <div class="table-wrap">
+        <table>
+            <tr><th>Type</th><th>Size</th><th>Percentage</th><th>Description</th></tr>
+            <tr><td>Code</td><td>8,768 B</td><td><span class="badge badge-ok">13.4% Flash</span></td><td>Executable code, in Flash</td></tr>
+            <tr><td>RO-Data</td><td>1,056 B</td><td><span class="badge badge-ok">1.6% Flash</span></td><td>Read-only data (const, strings)</td></tr>
+            <tr><td>RW-Data</td><td>1,592 B</td><td><span class="badge badge-ok">2.4% Flash</span> / <span class="badge badge-ok">7.8% SRAM</span></td><td>Initialized read-write data, occupies Flash + SRAM</td></tr>
+            <tr><td>ZI-Data</td><td>17,408 B</td><td><span class="badge badge-ok">85.0% SRAM</span></td><td>Zero-initialized data (BSS/heap/stack), SRAM only</td></tr>
+            <tr style="font-weight:600;background:var(--table-header);">
+                <td>Flash total</td><td>11,416 B</td><td><span class="badge badge-ok">17.4%</span></td><td>Code + RO-Data + RW-Data</td></tr>
+            <tr style="font-weight:600;background:var(--table-header);">
+                <td>SRAM total</td><td>19,000 B</td><td><span class="badge badge-warning">92.8%</span></td><td>RW-Data + ZI-Data</td></tr>
+            <tr><td>Stack (Stack)</td><td>1,024 B</td><td><span class="badge badge-ok">5.0% SRAM</span></td><td>Call stack space</td></tr>
+            
+        </table>
+        </div>
+    </div>
+</div>
+
+<!-- Tab: 模块 -->
+<div class="tab-panel" id="tab-modules">
+    <div class="panel">
+        <h2>Module Flash usage Top 12</h2>
+        <div class="chart-wrap" style="max-width:100%;">
+            <canvas id="moduleChart"></canvas>
+        </div>
+    </div>
+    <div class="panel">
+        <h2>Module memory detail</h2>
+        <div class="table-wrap">
+        <table>
+            <thead><tr><th>Module</th><th>Code</th><th>RO-Data</th><th>RW-Data</th><th>ZI-Data</th><th>Flash (Code+RO)</th><th>RAM (RW+ZI)</th></tr></thead>
+            <tbody><tr><td class='name'>stm32f10x_usart.o</td><td>1,032</td><td>0</td><td>0</td><td>0</td><td>1,032</td><td>0</td></tr><tr><td class='name'>stm32f10x_i2c.o</td><td>1,028</td><td>0</td><td>0</td><td>0</td><td>1,028</td><td>0</td></tr><tr><td class='name'>stm32f10x_rcc.o</td><td>932</td><td>0</td><td>20</td><td>0</td><td>932</td><td>20</td></tr><tr><td class='name'>stm32f10x_gpio.o</td><td>860</td><td>0</td><td>0</td><td>0</td><td>860</td><td>0</td></tr><tr><td class='name'>ov2640.o</td><td>840</td><td>0</td><td>24</td><td>0</td><td>840</td><td>24</td></tr><tr><td class='name'>ov2640_config.o</td><td>0</td><td>788</td><td>0</td><td>0</td><td>788</td><td>0</td></tr><tr><td class='name'>oled.o</td><td>756</td><td>0</td><td>0</td><td>0</td><td>756</td><td>0</td></tr><tr><td class='name'>sccb.o</td><td>732</td><td>0</td><td>0</td><td>0</td><td>732</td><td>0</td></tr><tr><td class='name'>stm32f10x_dma.o</td><td>596</td><td>0</td><td>0</td><td>0</td><td>596</td><td>0</td></tr><tr><td class='name'>uart.o</td><td>496</td><td>0</td><td>8</td><td>0</td><td>496</td><td>8</td></tr><tr><td class='name'>system_stm32f10x.o</td><td>480</td><td>0</td><td>20</td><td>0</td><td>480</td><td>20</td></tr><tr><td class='name'>i2c.o</td><td>368</td><td>0</td><td>0</td><td>0</td><td>368</td><td>0</td></tr><tr><td class='name'>main.o</td><td>304</td><td>0</td><td>0</td><td>16,384</td><td>304</td><td>16,384</td></tr><tr><td class='name'>startup_stm32f10x_md.o</td><td>36</td><td>236</td><td>0</td><td>1,024</td><td>272</td><td>1,024</td></tr><tr><td class='name'>delay.o</td><td>90</td><td>0</td><td>0</td><td>0</td><td>90</td><td>0</td></tr><tr><td class='name'>stm32f10x_it.o</td><td>26</td><td>0</td><td>0</td><td>0</td><td>26</td><td>0</td></tr><tr><td class='name'>core_cm3.o</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td class='name'>oled_font.o</td><td>0</td><td>0</td><td>1,520</td><td>0</td><td>0</td><td>1,520</td></tr></tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<!-- Tab: 区域 -->
+<div class="tab-panel" id="tab-regions">
+    
+        <div class="panel">
+            <h2>Execution Region: ER_IROM1</h2>
+            <div class="cards" style="margin-bottom:16px;">
+                <div class="card">
+                    <h3>Used</h3>
+                    <div class="value" style="color:#27ae60">9.59 KB</div>
+                    <div class="sub-value">15.0% of 64.00 KB</div>
+                    <div class="bar-bg"><div class="bar-fill" style="width:15.0%;background:#27ae60"></div></div>
+                </div>
+                <div class="card">
+                    <h3>Base address</h3>
+                    <div class="value">0x08000000</div>
+                    <div class="sub-value">Load: 0x08000000</div>
+                </div>
+            </div>
+            <table>
+                <thead><tr><th>Section</th><th>Size (Bytes)</th><th>Share</th></tr></thead>
+                <tbody><tr><td>.text (Code/RO)</td><td>8,712</td><td>88.7%</td></tr><tr><td>.constdata (Data/RO)</td><td>788</td><td>8.0%</td></tr><tr><td>RESET (Data/RO)</td><td>236</td><td>2.4%</td></tr><tr><td>Region$$Table (Data/RO)</td><td>32</td><td>0.3%</td></tr><tr><td>i.__scatterload_copy (Code/RO)</td><td>14</td><td>0.1%</td></tr><tr><td>i.__scatterload_zeroinit (Code/RO)</td><td>14</td><td>0.1%</td></tr><tr><td>.ARM.Collect$$$$0000000B (Code/RO)</td><td>8</td><td>0.1%</td></tr><tr><td>.ARM.Collect$$$$00000001 (Code/RO)</td><td>4</td><td>0.0%</td></tr><tr><td>.ARM.Collect$$$$00000004 (Code/RO)</td><td>4</td><td>0.0%</td></tr><tr><td>.ARM.Collect$$$$0000000E (Code/RO)</td><td>4</td><td>0.0%</td></tr><tr><td>.ARM.Collect$$$$00002712 (Code/RO)</td><td>4</td><td>0.0%</td></tr><tr><td>i.__scatterload_null (Code/RO)</td><td>2</td><td>0.0%</td></tr></tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <h2>Execution Region: RW_IRAM1</h2>
+            <div class="cards" style="margin-bottom:16px;">
+                <div class="card">
+                    <h3>Used</h3>
+                    <div class="value" style="color:#f39c12">18.55 KB</div>
+                    <div class="sub-value">92.8% of 20.00 KB</div>
+                    <div class="bar-bg"><div class="bar-fill" style="width:92.8%;background:#f39c12"></div></div>
+                </div>
+                <div class="card">
+                    <h3>Base address</h3>
+                    <div class="value">0x20000000</div>
+                    <div class="sub-value">Load: 0x08002660</div>
+                </div>
+            </div>
+            <table>
+                <thead><tr><th>Section</th><th>Size (Bytes)</th><th>Share</th></tr></thead>
+                <tbody><tr><td>.bss (Zero/RW)</td><td>16,384</td><td>86.2%</td></tr><tr><td>.data (Data/RW)</td><td>1,592</td><td>8.4%</td></tr><tr><td>STACK (Zero/RW)</td><td>1,024</td><td>5.4%</td></tr></tbody>
+            </table>
+        </div>
+</div>
+
+<div class="footer">
+    Generated by STM32 Memory Analyzer v2.0  ·  STM32F103C8  ·  2026-08-03 00:55:21
+</div>
+
+</div>
+
+<script>
+// ========== 主题切换 ==========
+function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? '' : 'dark');
+    localStorage.setItem('stm32-mem-theme', isDark ? 'light' : 'dark');
+}
+(function() {
+    if (localStorage.getItem('stm32-mem-theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();
+
+// ========== 选项卡切换 ==========
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+    // 重绘图表
+    if (name === 'modules') { setTimeout(function() { if (window.moduleChartInstance) window.moduleChartInstance.resize(); }, 100); }
+}
+
+// ========== 导出 ==========
+function exportJSON() {
+    const data = {
+        mcu: "STM32F103C8",
+        flash: { total: 65536, used: 11416, pct: 17.42 },
+        sram: { total: 20480, used: 19000, pct: 92.77 },
+        breakdown: { code: 8768, ro_data: 1056, rw_data: 1592, zi_data: 17408 },
+        stack: 1024, heap: 0,
+        generated: "2026-08-03 00:55:21"
+    };
+    downloadFile('memory_report.json', JSON.stringify(data, null, 2), 'application/json');
+}
+
+function exportCSV() {
+    var csv = 'Name,Code,RO_Data,RW_Data,ZI_Data,Flash,RAM\n';
+    var rows = document.querySelectorAll('#tab-modules tbody tr');
+    rows.forEach(function(row) {
+        var cols = row.querySelectorAll('td');
+        if (cols.length >= 7) {
+            csv += '"' + cols[0].textContent.trim() + '",' +
+                   cols[1].textContent.trim().replace(/,/g,'') + ',' +
+                   cols[2].textContent.trim().replace(/,/g,'') + ',' +
+                   cols[3].textContent.trim().replace(/,/g,'') + ',' +
+                   cols[4].textContent.trim().replace(/,/g,'') + ',' +
+                   cols[5].textContent.trim().replace(/,/g,'') + ',' +
+                   cols[6].textContent.trim().replace(/,/g,'') + '\n';
+        }
+    });
+    if (!rows.length) csv = 'Name,Code,RO_Data,RW_Data,ZI_Data,Flash,RAM\n(No module data)\n';
+    downloadFile('memory_modules.csv', csv, 'text/csv');
+}
+
+function downloadFile(filename, content, mime) {
+    var blob = new Blob([content], { type: mime + ';charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ========== Chart.js ==========
+// Flash 饼图
+new Chart(document.getElementById('flashChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Code', 'RO-Data', 'RW-Data', 'Free'],
+        datasets: [{ data: [8768, 1056, 1592, 54120],
+            backgroundColor: ['#2563eb', '#60a5fa', '#f59e0b', '#cbd5e1'],
+            borderColor: '#fff', borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+});
+
+// RAM 饼图
+new Chart(document.getElementById('ramChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['RW-Data', 'ZI-Data', 'Free'],
+        datasets: [{ data: [1592, 17408, 1480],
+            backgroundColor: ['#f59e0b', '#ef4444', '#cbd5e1'],
+            borderColor: '#fff', borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+});
+
+// 模块柱状图
+
+window.moduleChartInstance = new Chart(document.getElementById('moduleChart'), {
+    type: 'bar',
+    data: {
+        labels: ["stm32f10x_usart", "stm32f10x_i2c", "stm32f10x_rcc", "stm32f10x_gpio", "ov2640", "ov2640_config", "oled", "sccb", "stm32f10x_dma", "uart", "system_stm32f10x", "i2c"],
+        datasets: [{ label: 'Flash (Code+RO) Bytes', data: [1032, 1028, 932, 860, 840, 788, 756, 732, 596, 496, 480, 368],
+            backgroundColor: '#2563eb', borderRadius: 4 }]
+    },
+    options: {
+        indexAxis: 'y', responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { callback: function(v) { return (v/1024).toFixed(1) + ' KB'; } } } }
+    }
+});
+
+
+// RAM 细分图 (BSS vs STACK vs DATA)
+
+new Chart(document.getElementById('ramDetailChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['.bss', '.data', 'Stack', 'Free'],
+        datasets: [{ data: [16384, 1592, 1024, 1480],
+            backgroundColor: ['#8b5cf6', '#f59e0b', '#ef4444', '#cbd5e1'],
+            borderColor: '#fff', borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+});
+
+</script>
+</body>
+</html>
