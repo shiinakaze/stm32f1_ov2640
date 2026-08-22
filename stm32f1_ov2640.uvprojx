@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_MD,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\app;.\middleware;.\drivers;.\drivers\cmsis\core;.\drivers\cmsis\device;.\drivers\cmsis\device\startup;.\drivers\spl\inc</IncludePath>
+              <IncludePath>.\app;.\middleware;.\drivers;.\drivers\cmsis\core;.\drivers\cmsis\device;.\drivers\cmsis\device\startup;.\drivers\spl\inc;.\middleware\usb\inc;.\middleware\usb\uvc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -408,6 +408,71 @@
               <FileName>delay.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\middleware\delay.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>middleware/usb</GroupName>
+          <Files>
+            <File>
+              <FileName>usb_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\src\usb_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\src\usb_init.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_int.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\src\usb_int.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_mem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\src\usb_mem.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_regs.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\src\usb_regs.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_sil.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\src\usb_sil.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_desc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\uvc\usb_desc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_prop.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\uvc\usb_prop.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_pwr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\uvc\usb_pwr.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_istr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\uvc\usb_istr.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_bsp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\uvc\usb_bsp.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_uvc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\middleware\usb\uvc\usbd_uvc.c</FilePath>
             </File>
           </Files>
         </Group>

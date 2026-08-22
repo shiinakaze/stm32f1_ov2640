@@ -1,21 +1,18 @@
 #include "ov2640.h"
 
-/* 双缓冲：缓冲区由上层提供（ov2640_set_frame_buffer），驱动只持有指针。
- * 采集写入一块缓冲时，DMA 正在发送另一块，互不冲突。 */
-static uint8_t *jpeg_buf[2] = {NULL, NULL};
+/* 帧缓冲由上层提供（ov2640_set_frame_buffer），驱动只持有指针。
+ * UVC 流水线为串行：采集（USB 中断关闭）→ USB 发送 → 再采集，
+ * 单缓冲即可，采集时缓冲不会被发送侧读取。 */
+static uint8_t *jpeg_buf = NULL;
 static uint32_t jpeg_buf_size = 0;
-
-/* 当前写入的缓冲索引；采集完成后指向刚写满并待发送的帧 */
-static uint8_t capture_idx = 0;
 
 /* 最近一次采集好的 JPEG 帧信息 */
 static uint8_t *ready_frame_ptr = NULL;
 static uint32_t ready_frame_len = 0;
 
-void ov2640_set_frame_buffer(uint8_t *buf0, uint8_t *buf1, uint32_t size)
+void ov2640_set_frame_buffer(uint8_t *buf, uint32_t size)
 {
-    jpeg_buf[0] = buf0;
-    jpeg_buf[1] = buf1;
+    jpeg_buf = buf;
     jpeg_buf_size = size;
 }
 
@@ -132,7 +129,7 @@ void ov2640_capture(void)
     uint32_t idx = 0;
     uint32_t jpeg_start, jpeg_end;
     uint8_t end_found;
-    uint8_t *buf = jpeg_buf[capture_idx];
+    uint8_t *buf = jpeg_buf;
 
     /* 先等当前帧结束（确保不会从帧中途开始采集，避免撕裂/闪烁） */
     while (OV2640_VSYNC == 1)
@@ -202,11 +199,9 @@ void ov2640_capture(void)
         return;
     }
 
-    /* 记录待发送帧，并切换缓冲：下一帧写入另一块，
-     * 这样 DMA 发送本帧时不会与下一帧采集冲突 */
+    /* 记录待发送帧；帧缓冲由上层在发送完成后再复用 */
     ready_frame_ptr = buf + jpeg_start;
     ready_frame_len = jpeg_end - jpeg_start;
-    capture_idx ^= 1;
 }
 
 uint8_t *ov2640_get_ready_frame(uint32_t *len)
@@ -234,5 +229,5 @@ void ov2640_init(void)
     SCCB_Write(0XFF, 0x00);
     SCCB_Write(0XD3, 0x64); // R_DVP_SP
 
-    ov2640_set_output_size(640, 360);
+    ov2640_set_output_size(320, 240);
 }

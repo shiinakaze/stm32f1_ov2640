@@ -2,80 +2,101 @@
 #include "ov2640.h"
 #include "oled.h"
 #include "delay.h"
+
+#if APP_TRANSPORT == APP_TRANSPORT_UVC
+#include "usb_lib.h"
+#include "usb_bsp.h"
+#include "usbd_uvc.h"
+
+/* 帧缓冲：串行流水线（采集→USB 发送→再采集）下单缓冲即可。
+ * 12KB 覆盖 320x240 MJPEG 常见帧大小（典型 5~10KB），超出则丢帧。 */
+#define JPEG_BUFFER_SIZE (12 * 1024)
+static uint8_t jpeg_buffer[JPEG_BUFFER_SIZE];
+#endif
+
+#if APP_TRANSPORT == APP_TRANSPORT_UART
 #include "uart.h"
 
-extern uint32_t SystemCoreClock;
-
-/* 双缓冲帧存储：由上层定义，注入 OV2640 驱动。
- * 每块 8KB，共 16KB（STM32F103C8 的 20KB SRAM 可容纳）。 */
+/* 双缓冲：采集写入一块的同时，UART DMA 正在发送另一块 */
 #define JPEG_BUFFER_SIZE (8 * 1024)
 static uint8_t jpeg_buffer[2][JPEG_BUFFER_SIZE];
-
-/* 运行时超频到 128MHz（HSE 8MHz × PLL16）。
- * SystemInit 已将时钟设为 72MHz，此处切换到 128MHz。
- * AHB=128MHz, APB1=32MHz(/4), APB2=64MHz(/2), Flash 2WS+预取。
- * 超出 STM32F103 规格（额定 72MHz），稳定性不保证；
- * 若不稳定请注释掉 main 中的 sys_clock_set_to_128() 调用。 */
-static void sys_clock_set_to_128(void)
-{
-    /* 1. 切换系统时钟到 HSE，脱离 PLL（PLL 运行时不能改倍频） */
-    RCC->CFGR = (RCC->CFGR & ~(uint32_t)RCC_CFGR_SW) | (uint32_t)RCC_CFGR_SW_HSE;
-    while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_HSE)
-    {
-    }
-
-    /* 2. 关闭 PLL */
-    RCC->CR &= ~(uint32_t)RCC_CR_PLLON;
-
-    /* 3. Flash 2 等待周期 + 预取（72MHz 时已是 2 WS，此处确保） */
-    FLASH->ACR |= FLASH_ACR_PRFTBE;
-    FLASH->ACR = (FLASH->ACR & ~(uint32_t)FLASH_ACR_LATENCY) | (uint32_t)FLASH_ACR_LATENCY_2;
-
-    /* 4. 总线分频：先清零各字段再设置（SystemInit 已写过 72MHz 的值，必须清除） */
-    RCC->CFGR &= ~(uint32_t)(RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2);
-    RCC->CFGR |= (uint32_t)(RCC_CFGR_HPRE_DIV1   |  /* HCLK  = 128MHz */
-                             RCC_CFGR_PPRE2_DIV2  |  /* PCLK2 = 64MHz  */
-                             RCC_CFGR_PPRE1_DIV4);   /* PCLK1 = 32MHz  */
-
-    /* 5. PLL: HSE × 16 = 128MHz */
-    RCC->CFGR &= ~(uint32_t)(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL);
-    RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSE | RCC_CFGR_PLLMULL16);
-
-    /* 6. 开启 PLL 并等待就绪 */
-    RCC->CR |= RCC_CR_PLLON;
-    while ((RCC->CR & RCC_CR_PLLRDY) == 0)
-    {
-    }
-
-    /* 7. 切换系统时钟到 PLL，等待切换完成 */
-    RCC->CFGR = (RCC->CFGR & ~(uint32_t)RCC_CFGR_SW) | (uint32_t)RCC_CFGR_SW_PLL;
-    while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_PLL)
-    {
-    }
-
-    SystemCoreClock = 128000000;
-}
+#endif
 
 int main(void)
 {
     uint8_t *frame;
     uint32_t len;
+#if APP_TRANSPORT == APP_TRANSPORT_UVC
+    uint16_t width, height;
+#endif
+#if APP_TRANSPORT == APP_TRANSPORT_UART
+    uint8_t capture_idx = 0;
+#endif
 
-    sys_clock_set_to_128();
+    /* 保持 SystemInit 的 72MHz：UVC 需要 PLL/1.5 = 48MHz USB 时钟，
+     * 128MHz 超频与 USB 不兼容。 */
 
     oled_init();
-    uart1_init(1500000);
     ov2640_init();
-    ov2640_set_frame_buffer(jpeg_buffer[0], jpeg_buffer[1], JPEG_BUFFER_SIZE);
+
+#if APP_TRANSPORT == APP_TRANSPORT_UVC
+    ov2640_set_frame_buffer(jpeg_buffer, JPEG_BUFFER_SIZE);
+#endif
+
+#if APP_TRANSPORT == APP_TRANSPORT_UART
+    uart1_init(1500000);
+#endif
+
     oled_show_hex_num(1, 1, ov2640_get_pid(), 4);
     oled_show_hex_num(2, 1, ov2640_get_mid(), 4);
 
+#if APP_TRANSPORT == APP_TRANSPORT_UVC
+    usb_bsp_init();
+    USB_Init();
+
     while (1)
     {
-        /* 采集一帧到当前空闲缓冲（与上一次 DMA 发送并行） */
+        if (!uvc_is_streaming())
+        {
+            continue;
+        }
+
+        /* 等上一帧的 EOF 包发出（总线进入空包流），缓冲可安全覆盖 */
+        while (uvc_is_streaming() && !uvc_frame_done())
+        {
+        }
+        if (!uvc_is_streaming())
+        {
+            continue;
+        }
+
+        /* 主机 commit 改变分辨率时，在采集前应用（SCCB 写入较慢） */
+        if (uvc_poll_resolution(&width, &height))
+        {
+            ov2640_set_output_size(width, height);
+        }
+
+        /* 采集为 GPIO 位扫描，期间关闭 USB 中断防丢字节；
+         * 挂起的 USB 事件在解锁后统一处理，采集期间硬件持续
+         * 发送预装的空包，主机仅观察到帧间数据变慢 */
+        usb_irq_lock();
+        ov2640_capture();
+        usb_irq_unlock();
+
+        frame = ov2640_get_ready_frame(&len);
+        if (frame != NULL && len > 0 && len <= 0xFFFF)
+        {
+            uvc_feed_frame(frame, (uint16_t)len);
+        }
+    }
+#else
+    while (1)
+    {
+        /* 采集写入当前空闲缓冲（与上一次 DMA 发送并行） */
+        ov2640_set_frame_buffer(jpeg_buffer[capture_idx], JPEG_BUFFER_SIZE);
         ov2640_capture();
 
-        /* 等待上一帧 DMA 发送完毕，再启动新帧发送 */
+        /* 等上一帧 DMA 发送完毕，再启动新帧发送 */
         while (!uart1_is_transmit_complete())
         {
         }
@@ -83,8 +104,9 @@ int main(void)
         frame = ov2640_get_ready_frame(&len);
         if (frame != NULL && len > 0)
         {
-            /* 非阻塞启动 DMA 发送；下一轮采集会写入另一块缓冲 */
             uart1_transmit_non_blocking(frame, (uint16_t)len);
         }
+        capture_idx ^= 1;
     }
+#endif
 }

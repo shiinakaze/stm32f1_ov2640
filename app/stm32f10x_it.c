@@ -22,6 +22,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
+#include "usb_istr.h"
 
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -150,6 +151,16 @@ void SysTick_Handler(void)
 /*void PPP_IRQHandler(void)
 {
 }*/
+
+/**
+  * @brief  USB 低优先级中断（CTR/复位/SOF/挂起等所有 USB 事件）。
+  * @param  None
+  * @retval None
+  */
+void USB_LP_CAN1_RX0_IRQHandler(void)
+{
+    USB_Istr();
+}
 
 /**
   * @}

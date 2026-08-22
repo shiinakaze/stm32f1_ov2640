@@ -50,7 +50,7 @@ uint16_t ov2640_get_mid(void);
 void ov2640_init(void);
 void ov2640_init_config(const ov2640_cfg_item_t *cfg, uint16_t len);
 void ov2640_set_output_size(uint16_t width, uint16_t height);
-void ov2640_set_frame_buffer(uint8_t *buf0, uint8_t *buf1, uint32_t size);
+void ov2640_set_frame_buffer(uint8_t *buf, uint32_t size);
 void ov2640_capture(void);
 uint8_t *ov2640_get_ready_frame(uint32_t *len);
 

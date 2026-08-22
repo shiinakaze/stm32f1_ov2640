@@ -16,7 +16,9 @@
                 "drivers/cmsis/core",
                 "drivers/cmsis/device",
                 "drivers/cmsis/device/startup",
-                "drivers/spl/inc"
+                "drivers/spl/inc",
+                "middleware/usb/inc",
+                "middleware/usb/uvc"
             ],
             "defines": [
                 "STM32F10X_MD",
