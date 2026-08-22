@@ -3,7 +3,7 @@
 /* UVC 1.0 MJPEG 摄像头描述符。
  * 配置：接口 0 = VideoControl（无端点），
  *       接口 1 = VideoStreaming（alt0 零带宽 / alt1 ISO IN 368B），
- *       分辨率 320x240 与 160x120，帧率 15fps。 */
+ *       分辨率 320x240、160x120 与 640x360，帧率 30fps。 */
 
 /* 设备描述符：0xEF/0x02/0x01 = Misc/IAD 复合设备约定 */
 const uint8_t uvc_device_descriptor[UVC_SIZ_DEVICE_DESC] =
@@ -29,7 +29,7 @@ const uint8_t uvc_config_descriptor[UVC_SIZ_CONFIG_DESC] =
     /* 配置描述符 */
     0x09,                      /* bLength */
     0x02,                      /* bDescriptorType: CONFIGURATION */
-    0xBD, 0x00,                /* wTotalLength: 189 */
+    0xD3, 0x00,                /* wTotalLength: 211 */
     0x02,                      /* bNumInterfaces: 2 */
     0x01,                      /* bConfigurationValue */
     0x00,                      /* iConfiguration */
@@ -107,7 +107,7 @@ const uint8_t uvc_config_descriptor[UVC_SIZ_CONFIG_DESC] =
     0x24,                      /* bDescriptorType: CS_INTERFACE */
     0x01,                      /* bDescriptorSubtype: VS_INPUT_HEADER */
     0x01,                      /* bNumFormats: 1 */
-    0x63, 0x00,                /* wTotalLength: 14+11+34+34+6 = 99 */
+    0x79, 0x00,                /* wTotalLength: 14+11+30+30+30+6 = 121 */
     0x81,                      /* bEndPointAddress: EP1 IN */
     0x00,                      /* bmInfo: 不支持动态格式切换 */
     0x02,                      /* bTerminalLink: 输出端子 2 */
@@ -122,7 +122,7 @@ const uint8_t uvc_config_descriptor[UVC_SIZ_CONFIG_DESC] =
     0x24,                      /* bDescriptorType: CS_INTERFACE */
     0x06,                      /* bDescriptorSubtype: VS_FORMAT_MJPEG */
     0x01,                      /* bFormatIndex: 1 */
-    0x02,                      /* bNumFrameDescriptors: 2 */
+    0x03,                      /* bNumFrameDescriptors: 3 */
     0x01,                      /* bmFlags: 固定大小样本 */
     0x01,                      /* bDefaultFrameIndex: 1 */
     0x00,                      /* bAspectRatioX */
@@ -130,37 +130,51 @@ const uint8_t uvc_config_descriptor[UVC_SIZ_CONFIG_DESC] =
     0x00,                      /* bmInterlaceFlags: 逐行 */
     0x00,                      /* bCopyProtect */
 
-    /* VS 帧描述符 1：320x240，30/15fps */
-    0x22,                      /* bLength: 34 */
+    /* VS 帧描述符 1：320x240，30fps */
+    0x1E,                      /* bLength: 26 + 4×1 = 30 */
     0x24,                      /* bDescriptorType: CS_INTERFACE */
     0x07,                      /* bDescriptorSubtype: VS_FRAME_MJPEG */
     0x01,                      /* bFrameIndex: 1 */
     0x00,                      /* bmCapabilities */
     0x40, 0x01,                /* wWidth: 320 */
     0xF0, 0x00,                /* wHeight: 240 */
-    0x00, 0x40, 0x19, 0x01,    /* dwMinBitRate: 15fps 18.4Mbps */
-    0x00, 0x80, 0x32, 0x02,    /* dwMaxBitRate: 30fps 36.9Mbps */
+    0x00, 0x80, 0x32, 0x02,    /* dwMinBitRate: 36.9Mbps */
+    0x00, 0x80, 0x32, 0x02,    /* dwMaxBitRate: 36.9Mbps */
     0x00, 0x30, 0x00, 0x00,    /* dwMaxVideoFrameBufferSize: 12288 */
-    0x2A, 0x2C, 0x0A, 0x00,    /* dwDefaultFrameInterval: 666666 (15fps) */
-    0x02,                      /* bFrameIntervalType: 2 个离散帧率 */
+    0x15, 0x16, 0x05, 0x00,    /* dwDefaultFrameInterval: 333333 (30fps) */
+    0x01,                      /* bFrameIntervalType: 1 个离散帧率 */
     0x15, 0x16, 0x05, 0x00,    /* dwFrameInterval(1): 333333 (30fps) */
-    0x2A, 0x2C, 0x0A, 0x00,    /* dwFrameInterval(2): 666666 (15fps) */
 
-    /* VS 帧描述符 2：160x120，30/15fps */
-    0x22,                      /* bLength: 34 */
+    /* VS 帧描述符 2：160x120，30fps */
+    0x1E,                      /* bLength: 26 + 4×1 = 30 */
     0x24,                      /* bDescriptorType: CS_INTERFACE */
     0x07,                      /* bDescriptorSubtype: VS_FRAME_MJPEG */
     0x02,                      /* bFrameIndex: 2 */
     0x00,                      /* bmCapabilities */
     0xA0, 0x00,                /* wWidth: 160 */
     0x78, 0x00,                /* wHeight: 120 */
-    0x00, 0x50, 0x46, 0x00,    /* dwMinBitRate: 15fps 4.6Mbps */
-    0x00, 0xA0, 0x8C, 0x00,    /* dwMaxBitRate: 30fps 9.2Mbps */
+    0x00, 0xA0, 0x8C, 0x00,    /* dwMinBitRate: 9.2Mbps */
+    0x00, 0xA0, 0x8C, 0x00,    /* dwMaxBitRate: 9.2Mbps */
     0x00, 0x30, 0x00, 0x00,    /* dwMaxVideoFrameBufferSize: 12288 */
-    0x2A, 0x2C, 0x0A, 0x00,    /* dwDefaultFrameInterval: 666666 (15fps) */
-    0x02,                      /* bFrameIntervalType: 2 个离散帧率 */
+    0x15, 0x16, 0x05, 0x00,    /* dwDefaultFrameInterval: 333333 (30fps) */
+    0x01,                      /* bFrameIntervalType: 1 个离散帧率 */
     0x15, 0x16, 0x05, 0x00,    /* dwFrameInterval(1): 333333 (30fps) */
-    0x2A, 0x2C, 0x0A, 0x00,    /* dwFrameInterval(2): 666666 (15fps) */
+
+    /* VS 帧描述符 3：640x360，30fps
+     * （宽高比 16:9，驱动会在 640x480 输入窗口内垂直居中裁剪） */
+    0x1E,                      /* bLength: 26 + 4×1 = 30 */
+    0x24,                      /* bDescriptorType: CS_INTERFACE */
+    0x07,                      /* bDescriptorSubtype: VS_FRAME_MJPEG */
+    0x03,                      /* bFrameIndex: 3 */
+    0x00,                      /* bmCapabilities */
+    0x80, 0x02,                /* wWidth: 640 */
+    0x68, 0x01,                /* wHeight: 360 */
+    0x00, 0x80, 0x97, 0x06,    /* dwMinBitRate: 110.6Mbps */
+    0x00, 0x80, 0x97, 0x06,    /* dwMaxBitRate: 110.6Mbps */
+    0x00, 0x40, 0x00, 0x00,    /* dwMaxVideoFrameBufferSize: 16384 */
+    0x15, 0x16, 0x05, 0x00,    /* dwDefaultFrameInterval: 333333 (30fps) */
+    0x01,                      /* bFrameIntervalType: 1 个离散帧率 */
+    0x15, 0x16, 0x05, 0x00,    /* dwFrameInterval(1): 333333 (30fps) */
 
     /* 颜色匹配描述符 */
     0x06,                      /* bLength: 6 */

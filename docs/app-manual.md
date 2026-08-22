@@ -42,6 +42,7 @@ USB 侧只需要两个端点：
 | USB DM / DP | PA11 / PA12（固定，不可改） |
 | SCCB | 软件 SCCB（见 `drivers/sccb.c`） |
 | UART1 TX（调试通道） | PA9 |
+| OLED（调试显示） | PB6 / PB7（软件 I2C，`drivers/i2c.c`） |
 
 要点：
 
@@ -113,48 +114,49 @@ iManufacturer=1, iProduct=2, iSerialNumber=3, bNumConfigurations=1
 
 用 IAD 组织视频功能时设备类必须填 0xEF/0x02/0x01，否则 Windows 不认。
 
-### 4.2 配置描述符骨架（总长 189B）
+### 4.2 配置描述符骨架（总长 211B）
 
 ```
 Config(9) + IAD(8)
 + [VC 接口: Iface(9) + VC头(13) + 输入端子(17) + 输出端子(9)]   ← VC 类部总长 39
-+ [VS alt0: Iface(9) + VS输入头(14) + MJPEG格式(11) + 帧1(34) + 帧2(34) + 颜色匹配(6)]  ← VS 类部总长 99
++ [VS alt0: Iface(9) + VS输入头(14) + MJPEG格式(11) + 帧1(30) + 帧2(30) + 帧3(30) + 颜色匹配(6)]  ← VS 类部总长 121
 + [VS alt1: Iface(9) + ISO端点(7)]
 ```
 
 两个字节数必须自己算对并填进对应 wTotalLength：
 
 - VC 头的 wTotalLength = 13+17+9 = **39**
-- VS 输入头的 wTotalLength = 14+11+34+34+6 = **99**
-- Config 的 wTotalLength = 9+8+9+39+9+99+9+7 = **189**
+- VS 输入头的 wTotalLength = 14+11+30+30+30+6 = **121**
+- Config 的 wTotalLength = 9+8+9+39+9+121+9+7 = **211**
 
 **长度自检方法**：把每段的 bLength 求和，必须等于三个 wTotalLength——描述符错一个字节，
 主机就解析失败或设备管理器黄色叹号。
 
-### 4.3 帧描述符（30B→34B 的由来）
+### 4.3 帧描述符（30B 的由来）
 
 帧描述符长度公式：`bLength = 26 + 4 × bFrameIntervalType`。
 
-每个分辨率一个帧描述符。双帧率档（30/15fps）写法（以 320x240 为例）：
+每个分辨率一个帧描述符，全部固定 30fps 单档（Windows 相机对 MJPEG 源
+默认按 30fps 协商，只声明 15fps 时可能不出画面）：
 
 ```
-0x22,                    /* bLength = 26 + 4×2 = 34 */
+0x1E,                    /* bLength = 26 + 4×1 = 30 */
 0x24, 0x07,              /* CS_INTERFACE, VS_FRAME_MJPEG */
 0x01,                    /* bFrameIndex = 1 */
 0x00,                    /* bmCapabilities */
 0x40,0x01, 0xF0,0x00,    /* wWidth=320, wHeight=240 */
-dwMinBitRate(4)          /* = W×H×2×fps_min×8 */
-dwMaxBitRate(4)          /* = W×H×2×fps_max×8 */
-dwMaxVideoFrameBufferSize(4)  /* 12288 = 帧缓冲容量，超出的帧会被固件丢弃 */
-dwDefaultFrameInterval(4)     /* 666666（15fps，单位 100ns） */
-0x02,                    /* bFrameIntervalType = 2 个离散帧率 */
-dwFrameInterval[0](4)    /* 333333（30fps）← 离散帧率必须升序排列 */
-dwFrameInterval[1](4)    /* 666666（15fps） */
+dwMinBitRate(4)          /* = W×H×2×fps×8，单档时与 max 相同 */
+dwMaxBitRate(4)
+dwMaxVideoFrameBufferSize(4)  /* 帧缓冲容量上限；320x240/160x120 声明 12288，
+                                  640x360 声明 16384，超出的帧会被固件丢弃 */
+dwDefaultFrameInterval(4)     /* 333333（30fps，单位 100ns） */
+0x01,                    /* bFrameIntervalType = 1 个离散帧率 */
+dwFrameInterval[0](4)    /* 333333（30fps）；多档时必须按 interval 升序排列 */
 ```
 
-帧率换算：`interval = 10^7 / fps`（100ns 单位）。30fps=333333，15fps=666666。
+帧率换算：`interval = 10^7 / fps`（100ns 单位）。15fps=666666，30fps=333333。
 
-160x120 为 bFrameIndex=2，结构相同。切换分辨率时主机重新 commit + SET_INTERFACE，
+160x120 为 bFrameIndex=2、640x360 为 bFrameIndex=3，结构相同。切换分辨率时主机重新 commit + SET_INTERFACE，
 固件在 commit 里记下 bFrameIndex，主循环下一次采集前调 `ov2640_set_output_size()` 生效。
 
 ### 4.4 ISO 端点描述符（7B）
@@ -203,8 +205,8 @@ SET_INTERFACE(alt1)。probe/commit 各是 **26 字节**（UVC 1.0）：
 ```
 偏移  长度  字段
 0     2    bmHint
-2     1    bFormatIndex        ← 分辨率切换依据
-3     1    bFrameIndex
+2     1    bFormatIndex        /* 固定为 1（只有 MJPEG 一种格式） */
+3     1    bFrameIndex         ← 分辨率切换依据
 4     4    dwFrameInterval
 8     10   各速率/质量字段
 18    4    dwMaxVideoFrameSize
@@ -307,18 +309,36 @@ OV2640 采集是 `while(PCLK==0); 读 GPIO; while(PCLK==1);` 的位扫描轮询�
 → ov2640_get_ready_frame() → uvc_feed_frame()
 ```
 
-帧节奏 ≈ 40ms 采集 + N×1ms 发送（12KB 帧 ≈ 68 包）：
-320x240 实际约 10~13fps，160x120 约 15~18fps。
+帧节奏 ≈ 40ms 采集 + N×1ms 发送（16KB 帧 ≈ 91 包）：
+320x240 实际约 10~13fps，160x120 约 15~18fps，640x360 约 6~8fps（发送带宽 184B/ms 为瓶颈）。
 
 ### 7.2 单缓冲即够
 
-串行流水线里采集时无人读缓冲 → 单 12KB 缓冲。
+串行流水线里采集时无人读缓冲 → 单 16KB 缓冲。
 （UART 调试通道是另一套：双 8KB，采集与上一帧 DMA 并行，见 `APP_TRANSPORT` 宏。）
 
 ### 7.3 采集期间主机看到什么
 
 帧间 40ms 空包流 + 正常数据包。对主机来说这是一帧"产生得很慢"的视频，
 帧内零丢包——完全合法的 UVC 行为。
+
+### 7.4 OV2640 驱动侧要点（`drivers/ov2640.c`）
+
+- **初始化校验链**：GPIO/硬件复位 → SCCB → 读 PID（PIDH=0x26，重试 3 次）→
+  下载 SVGA 基础表 + JPEG 模式表（来源：OV2640 Software Application Notes 1.03
+  §13.2，数值逐项一致）→ R_DVP_SP 手动分频 → 回读 IMAGE_MODE==0x10 哨兵。
+  任一失败：OLED 显示 `OV2640 init err` + 错误码并停机，不进入 USB 初始化。
+- **PCLK 速度**：位扫描轮询每字节 CPU 耗时约 700~840ns（72MHz/-O1 实测反汇编），
+  PCLK 上限约 900kHz。当前 `OV2640_DVP_SPEED_DIV=64` → 750kHz；
+  曾用 32（1.5MHz）导致全帧丢弃黑屏，勿再犯。
+- **采集超时**：帧同步/读帧的所有等待循环带约 2 秒轮询预算，摄像头拔掉时
+  丢帧返回而不是挂死。
+- **分辨率切换**：`ov2640_set_output_size` 写 DSP 缩放输出窗口（ZMOW/ZMOH，
+  单位 real/4），并按输出宽高比裁剪 DSP 输入窗口（HSIZE1/VSIZE1/XOFFL/YOFFL）——
+  640x360（16:9）在 640x480（4:3）输入窗口内垂直居中裁剪，画面不变形；
+  4:3 输出还原完整窗口。
+- **OLED 诊断**：第 1/2 行 PID/MID，第 3/4 行 F=送出帧数 / E=丢弃帧数——
+  排查"黑屏"时先看这两行分辨采集侧还是主机侧问题。
 
 ---
 
@@ -360,6 +380,10 @@ PMA 前 64 字节是 BTABLE（8 个端点 × 8B）。只用 EP0/EP1 时，
 | 黑屏且偶尔闪一帧 | DTOG/缓冲选择逻辑错，半数包是垃圾 |
 | 能出图但频繁坏帧 | 采集期间没锁 USB 中断（丢字节）；或分辨率>缓冲容量被截断 |
 | 主机报无法启动视频 | probe/commit 长度或 GET_LEN 应答错；帧描述符 wTotalLength 算错 |
+| Windows 相机黑屏，VLC/ffmpeg 正常 | 描述符只声明了 15fps——Windows 相机对 MJPEG 默认按 30fps 协商；帧描述符统一 30fps 单档 |
+| 黑屏且 OLED 的 E 计数增长 | 采集侧丢帧：PCLK 分频过高（位扫描轮询上限约 900kHz）等；分频回调大复测 |
+| 黑屏但 OLED 的 F 计数增长 | 采集正常，主机侧问题：描述符缓存（拔插/重装设备）、协商参数、USBPcap 抓包 |
+| OLED 显示 init err + 错误码 | 1=SCCB 无应答（接线/供电），2=PID 不符，3=IMAGE_MODE 回读校验失败 |
 | 解码花屏但帧完整 | OV2640 JPEG 缺 DHT/量化表（本工程配置已含表；移植别家配置时注意） |
 
 ---
@@ -368,14 +392,17 @@ PMA 前 64 字节是 BTABLE（8 个端点 × 8B）。只用 EP0/EP1 时，
 
 - [ ] 72MHz 时钟，`RCC_USBCLKConfig(PLL/1.5)`
 - [ ] `hw_config.h` 垫片（usb_lib.h 需要）
-- [ ] 描述符三个 wTotalLength 求和自检
+- [ ] 描述符三个 wTotalLength 求和自检（211 / 39 / 121）
 - [ ] 设备类 0xEF/0x02/0x01（IAD）
+- [ ] 帧描述符统一 30fps 单档（Windows 相机兼容），bLength=26+4×档数
 - [ ] ISO 端点 `SetEPDblBuffAddr` 两组地址 + `ClearDTOG` + 只写 DIS/VALID
 - [ ] CTR_TX 回调按 DTOG_TX 选缓冲，`SetEPDblBuf{0,1}Count(EP_DBUF_IN, n)`
 - [ ] EOF 包发完 → 双缓冲装空包 → 才允许锁中断采集
 - [ ] feed 顺序：指针 → 标志 → 长度
 - [ ] `stm32f10x_it.c` 挂 `USB_LP_CAN1_RX0_IRQHandler`
 - [ ] PB3/PB4 用前关 JTAG
+- [ ] PCLK 分频 ≤900kHz（`OV2640_DVP_SPEED_DIV` ≥50 一律先反汇编数周期）
+- [ ] 上板看 OLED：PID/MID 正常、开流后 F 计数增长；ffplay 强制各分辨率出图
 
 ---
 

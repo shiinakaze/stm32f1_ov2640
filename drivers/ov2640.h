@@ -4,18 +4,25 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <stdio.h>
+
 #include "main.h"
-#include "delay.h"
-#include "sccb.h"
 #include "ov2640_config.h"
 
-#define OV2640_DEVICE_ADDRESS 0x60
+/* SCCB 器件地址（DS §8：写 0x60 / 读 0x61） */
+#define OV2640_SCCB_ADDR 0x60
 
-#define RCC_APB_OV2640 (RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC)
+/* 驱动错误码 */
+typedef enum {
+    OV2640_OK = 0,      /* 成功 */
+    OV2640_ERR_SCCB,    /* SCCB 总线通信失败（传感器未连接或未应答） */
+    OV2640_ERR_PID,     /* 器件 ID 与 OV2640 不符 */
+    OV2640_ERR_CONFIG,  /* 配置下载后回读校验失败 */
+} ov2640_err_t;
 
-// Control Pin
-// SIO_C and SIO_D are defined in sccb.h
+/* 时钟：GPIOA + GPIOB（数据口 GPIOA，控制口/SCCB GPIOB） */
+#define RCC_APB_OV2640 (RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
+
+/* 控制引脚（GPIOB）。SCCB 引脚 SIO_C/SIO_D 定义在 sccb.h */
 
 #define PCLK_PWDN_HREF_RESET_VSYNC_GPIO GPIOB
 
@@ -25,7 +32,7 @@ extern "C" {
 #define PCLK_PIN GPIO_Pin_8
 #define PWDN_PIN GPIO_Pin_9
 
-// Data Pin
+/* 数据引脚 D0-D7（GPIOA 低 8 位） */
 #define DATA_GPIO GPIOA
 #define DATA0_PIN GPIO_Pin_0
 #define DATA1_PIN GPIO_Pin_1
@@ -36,22 +43,67 @@ extern "C" {
 #define DATA6_PIN GPIO_Pin_6
 #define DATA7_PIN GPIO_Pin_7
 
-#define OV2640_READ_DATA() (GPIOA->IDR & 0x00FF)
-#define OV2640_PCLK GPIO_ReadInputDataBit(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, PCLK_PIN)
-#define OV2640_HREF GPIO_ReadInputDataBit(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, HREF_PIN)
-#define OV2640_VSYNC GPIO_ReadInputDataBit(PCLK_PWDN_HREF_RESET_VSYNC_GPIO, VSYNC_PIN)
+#define OV2640_READ_DATA() ((uint8_t)(DATA_GPIO->IDR & 0x00FF))
 
-#define SCCB_Write(sub_address, data) sw_sccb_write_reg(OV2640_DEVICE_ADDRESS, sub_address, data)
-#define SCCB_Read(sub_address) sw_sccb_read_reg(OV2640_DEVICE_ADDRESS, sub_address)
+/* 直接读 IDR 位（0/1），避免 GPIO_ReadInputDataBit 的函数调用开销：
+ * 采集热路径对 PCLK 的轮询必须快于 PCLK 半周期，否则丢字节 */
+#define OV2640_PCLK ((PCLK_PWDN_HREF_RESET_VSYNC_GPIO->IDR & PCLK_PIN) != 0)
+#define OV2640_HREF ((PCLK_PWDN_HREF_RESET_VSYNC_GPIO->IDR & HREF_PIN) != 0)
+#define OV2640_VSYNC ((PCLK_PWDN_HREF_RESET_VSYNC_GPIO->IDR & VSYNC_PIN) != 0)
 
+/**
+ * @brief  初始化摄像头：GPIO/复位/SCCB → 校验器件 ID → 下载寄存器配置，
+ *         进入 SVGA 采样 + JPEG 压缩输出，默认分辨率 320x240
+ * @retval OV2640_OK 成功；否则为失败原因（传感器缺失/ID 不符/配置校验失败）
+ */
+ov2640_err_t ov2640_init(void);
+
+/**
+ * @brief  硬件复位：RESET 引脚拉低再拉高（DS §3.20），各保持 10ms
+ */
 void ov2640_hw_reset(void);
-uint16_t ov2640_get_pid(void);
-uint16_t ov2640_get_mid(void);
-void ov2640_init(void);
-void ov2640_init_config(const ov2640_cfg_item_t *cfg, uint16_t len);
-void ov2640_set_output_size(uint16_t width, uint16_t height);
+
+/**
+ * @brief  读取产品 ID（PIDH/PIDL，传感器组只读寄存器）
+ * @param  pid 输出 16 位 ID（DS 表 13：OV2640 为 0x2641）
+ * @retval OV2640_OK 成功；OV2640_ERR_SCCB 总线通信失败
+ */
+ov2640_err_t ov2640_get_pid(uint16_t *pid);
+
+/**
+ * @brief  读取厂商 ID（MIDH/MIDL，传感器组只读寄存器）
+ * @param  mid 输出 16 位 ID（DS 表 13：OmniVision 为 0x7FA2）
+ * @retval OV2640_OK 成功；OV2640_ERR_SCCB 总线通信失败
+ */
+ov2640_err_t ov2640_get_mid(uint16_t *mid);
+
+/**
+ * @brief  设置采集帧缓冲（由上层提供，驱动只持有指针）
+ * @note   UVC 流水线为串行：采集（USB 中断关闭）→ USB 发送 → 再采集，
+ *         单缓冲即可，采集时缓冲不会被发送侧读取
+ */
 void ov2640_set_frame_buffer(uint8_t *buf, uint32_t size);
+
+/**
+ * @brief  设置输出分辨率（DSP 缩放输出窗口，单位 real/4，DS 表 12）
+ * @param  width/height 实际输出宽高（如 320x240），可被 UVC 主机
+ *         commit 请求动态切换
+ */
+void ov2640_set_output_size(uint16_t width, uint16_t height);
+
+/**
+ * @brief  采集一帧：等待帧起始 → 按位扫描读入 → 定位 JPEG SOI/EOI 标记。
+ *         采集期间调用方需关闭会打断位扫描的中断（如 USB 中断）
+ * @note   结果通过 ov2640_get_ready_frame() 获取；标记缺失/超时时
+ *         得到 NULL（该帧被丢弃）
+ */
 void ov2640_capture(void);
+
+/**
+ * @brief  取最近一次采集成功的 JPEG 帧
+ * @param  len 输出帧长度（字节）
+ * @retval 帧起始指针；上一帧无效时返回 NULL
+ */
 uint8_t *ov2640_get_ready_frame(uint32_t *len);
 
 #ifdef __cplusplus

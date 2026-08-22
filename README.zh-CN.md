@@ -25,7 +25,7 @@ STM32F103C8（Blue Pill）+ OV2640：采集 MJPEG，支持两种传输通道（�
 #define APP_TRANSPORT APP_TRANSPORT_UVC   // 或 APP_TRANSPORT_UART
 ```
 
-- UVC 模式：单 12KB 帧缓冲，采集期间锁 USB 中断（详见下文）
+- UVC 模式：单 16KB 帧缓冲，采集期间锁 USB 中断（详见下文）
 - UART 模式：双 8KB 缓冲，采集与上一帧的 DMA 发送并行（与旧版行为一致）
 
 ### 架构
@@ -33,8 +33,8 @@ STM32F103C8（Blue Pill）+ OV2640：采集 MJPEG，支持两种传输通道（�
 ```
 OV2640 (DVP, GPIO 位扫描)            STM32F103C8 @72MHz              PC
 ┌──────────────┐   VSYNC/HREF/PCLK  ┌─────────────────┐   USB FS ISO IN   ┌──────────┐
-│ 320x240/160x120│ ───────────────► │ JPEG 帧缓冲 12KB │ ────────────────► │ UVC 主机  │
-│ MJPEG 30/15fps│    PA0-7/PB3-9    │ EP1 ISO 双缓冲   │   0x81 端点 184B   │ 相机应用  │
+│ 320x240/160x120/640x360│ ─────► │ JPEG 帧缓冲 16KB │ ────────────────► │ UVC 主机  │
+│ MJPEG 30fps   │    PA0-7/PB3-9    │ EP1 ISO 双缓冲   │   0x81 端点 184B   │ 相机应用  │
 └──────────────┘                    └─────────────────┘                   └──────────┘
 ```
 
@@ -64,10 +64,10 @@ OV2640 采集为 GPIO 位扫描轮询，任何中断都会导致丢字节。
 - 采集期间硬件自动交替发送两个预装的 UVC 空包（仅 2 字节载荷头），
   总线上保持规整的空包流，无需 CPU 参与——这正是真实摄像头的行为
 - 主机视角：一帧"慢速产生"的视频（空包 + 数据 + EOF），帧内无丢包
-- 分辨率/帧率：描述符声明 320x240 与 160x120，各含 30/15fps 两档
-  （相机属性中可选）；帧率为主机渲染节奏，实际出帧受流水线限制，
-  约 10~13fps（320x240）/ 15~18fps（160x120）
-- 帧超过 12KB（描述符声明的 dwMaxVideoFrameBufferSize）会被丢弃
+- 分辨率/帧率：描述符声明 320x240、160x120 与 640x360，固定 30fps；
+  帧率为主机渲染节奏，实际出帧受流水线限制，
+  约 10~13fps（320x240）/ 15~18fps（160x120）/ 6~8fps（640x360，受发送带宽限制）
+- 帧超过 16KB（描述符声明的 dwMaxVideoFrameBufferSize）会被丢弃
 
 ### PMA 布局（512B）
 
@@ -87,8 +87,8 @@ OV2640 采集为 GPIO 位扫描轮询，任何中断都会导致丢字节。
 
 ### 资源占用（armcc -O1）
 
-- Flash：约 16.4KB / 64KB
-- RAM：约 15.5KB / 20KB（含 12KB JPEG 帧缓冲）；UART 模式约 19.6KB / 20KB
+- Flash：约 16.5KB / 64KB
+- RAM：约 19.1KB / 20KB（含 16KB JPEG 帧缓冲）；UART 模式约 19.6KB / 20KB
 
 Thanks AI IDE for the help.
 Thanks GLM for the help.

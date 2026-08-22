@@ -9,8 +9,10 @@
 #include "usbd_uvc.h"
 
 /* 帧缓冲：串行流水线（采集→USB 发送→再采集）下单缓冲即可。
- * 12KB 覆盖 320x240 MJPEG 常见帧大小（典型 5~10KB），超出则丢帧。 */
-#define JPEG_BUFFER_SIZE (12 * 1024)
+ * 16KB 覆盖 640x360 MJPEG 常见帧大小，320x240 典型仅 5~10KB；
+ * 超出缓冲的帧被丢弃（采集截断、无 EOI）。
+ * RAM 预算：F103C8 共 20KB，本缓冲占 16KB，其余静态数据约 3.3KB。 */
+#define JPEG_BUFFER_SIZE (16 * 1024)
 static uint8_t jpeg_buffer[JPEG_BUFFER_SIZE];
 #endif
 
@@ -24,10 +26,14 @@ static uint8_t jpeg_buffer[2][JPEG_BUFFER_SIZE];
 
 int main(void)
 {
+    ov2640_err_t err;
+    uint16_t pid, mid;
     uint8_t *frame;
     uint32_t len;
 #if APP_TRANSPORT == APP_TRANSPORT_UVC
     uint16_t width, height;
+    uint32_t frames_ok = 0;      /* 已成功送出的帧数 */
+    uint32_t frames_dropped = 0; /* 采集失败被丢弃的帧数 */
 #endif
 #if APP_TRANSPORT == APP_TRANSPORT_UART
     uint8_t capture_idx = 0;
@@ -37,7 +43,17 @@ int main(void)
      * 128MHz 超频与 USB 不兼容。 */
 
     oled_init();
-    ov2640_init();
+    err = ov2640_init();
+    if (err != OV2640_OK)
+    {
+        /* 传感器缺失/ID 不符/配置校验失败：显示错误码并停机，
+         * 继续运行只会流出无效数据 */
+        oled_show_string(1, 1, (uint8_t *)"OV2640 init err");
+        oled_show_hex_num(2, 1, err, 2);
+        while (1)
+        {
+        }
+    }
 
 #if APP_TRANSPORT == APP_TRANSPORT_UVC
     ov2640_set_frame_buffer(jpeg_buffer, JPEG_BUFFER_SIZE);
@@ -47,10 +63,22 @@ int main(void)
     uart1_init(1500000);
 #endif
 
-    oled_show_hex_num(1, 1, ov2640_get_pid(), 4);
-    oled_show_hex_num(2, 1, ov2640_get_mid(), 4);
+    if (ov2640_get_pid(&pid) == OV2640_OK)
+    {
+        oled_show_hex_num(1, 1, pid, 4);
+    }
+    if (ov2640_get_mid(&mid) == OV2640_OK)
+    {
+        oled_show_hex_num(2, 1, mid, 4);
+    }
 
 #if APP_TRANSPORT == APP_TRANSPORT_UVC
+    /* OLED 第 3/4 行实时诊断（流式期间）：
+     * F = 已送出帧数，E = 丢弃帧数（标记缺失/截断/超时）。
+     * F 增长而画面黑 → 问题在 USB/主机侧；E 增长 → 采集侧丢帧 */
+    oled_show_string(3, 1, (uint8_t *)"F:");
+    oled_show_string(4, 1, (uint8_t *)"E:");
+
     usb_bsp_init();
     USB_Init();
 
@@ -87,7 +115,14 @@ int main(void)
         if (frame != NULL && len > 0 && len <= 0xFFFF)
         {
             uvc_feed_frame(frame, (uint16_t)len);
+            frames_ok++;
         }
+        else
+        {
+            frames_dropped++;
+        }
+        oled_show_num(3, 3, frames_ok, 6);
+        oled_show_num(4, 3, frames_dropped, 6);
     }
 #else
     while (1)

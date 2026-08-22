@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define UVC_SIZ_DEVICE_DESC (18)
-#define UVC_SIZ_CONFIG_DESC (189)
+#define UVC_SIZ_CONFIG_DESC (211)
 
 #define UVC_SIZ_STRING_LANGID (4)
 #define UVC_SIZ_STRING_VENDOR (2 + 2 * 4)    /* "Kaze" */

@@ -52,6 +52,13 @@ static volatile uint16_t res_width = 320;
 static volatile uint16_t res_height = 240;
 static volatile uint8_t applied_frame_index = 1;
 
+/* 帧索引 → 分辨率（顺序与 usb_desc.c 的 VS 帧描述符一致） */
+static const uint16_t res_table[][2] = {
+    {320, 240}, /* bFrameIndex 1 */
+    {160, 120}, /* bFrameIndex 2 */
+    {640, 360}, /* bFrameIndex 3 */
+};
+
 static uint16_t payload_max = UVC_MAX_PAYLOAD;
 
 static void load_next_packet(void);
@@ -147,13 +154,14 @@ void uvc_commit_applied(void)
     if (frame_index != applied_frame_index)
     {
         applied_frame_index = frame_index;
-        if (frame_index == 2)
+        if (frame_index >= 1 && frame_index <= sizeof(res_table) / sizeof(res_table[0]))
         {
-            res_width = 160;
-            res_height = 120;
+            res_width = res_table[frame_index - 1][0];
+            res_height = res_table[frame_index - 1][1];
         }
         else
         {
+            /* 非法帧索引回退默认分辨率 */
             res_width = 320;
             res_height = 240;
         }
@@ -282,7 +290,7 @@ static void probe_commit_set_default(uint8_t *buf)
     }
     buf[2] = 1;                                  /* bFormatIndex */
     buf[3] = applied_frame_index;                /* bFrameIndex */
-    buf[4] = 0x2A; buf[5] = 0x2C; buf[6] = 0x0A; buf[7] = 0x00; /* 666666 */
+    buf[4] = 0x15; buf[5] = 0x16; buf[6] = 0x05; buf[7] = 0x00; /* 333333 (30fps) */
     buf[18] = 0x00; buf[19] = 0x30; buf[20] = 0x00; buf[21] = 0x00; /* 12288 */
     buf[22] = 0xB8; buf[23] = 0x00; buf[24] = 0x00; buf[25] = 0x00; /* 184 */
 }

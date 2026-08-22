@@ -1,6 +1,9 @@
 #include "delay.h"
 
-#define MCU_SYSCLK 128 //Set MCU System clock 128M (overclocked)
+/* 系统时钟 72MHz（SystemInit：SYSCLK_FREQ_72MHz，UVC 需 48MHz USB 时钟）。
+ * 注意：单次 delay_us 的 us 值不得超过 0xFFFFFF/72 ≈ 233016，
+ * 当前调用方最大为 delay_ms 内部的 1000us。 */
+#define MCU_SYSCLK 72
 
 /**
   * @brief  Microsecond delay

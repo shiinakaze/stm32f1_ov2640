@@ -25,7 +25,7 @@ Select in `app/main.h` (rebuild after changing):
 #define APP_TRANSPORT APP_TRANSPORT_UVC   // or APP_TRANSPORT_UART
 ```
 
-- UVC mode: single 12 KB frame buffer, USB interrupts locked during capture (see below)
+- UVC mode: single 16 KB frame buffer, USB interrupts locked during capture (see below)
 - UART mode: dual 8 KB buffers, capture runs in parallel with the DMA transfer of the previous frame (same as the legacy version)
 
 ### Architecture
@@ -33,8 +33,8 @@ Select in `app/main.h` (rebuild after changing):
 ```
 OV2640 (DVP, GPIO bit-bang)           STM32F103C8 @72MHz               PC
 ┌──────────────┐   VSYNC/HREF/PCLK  ┌─────────────────┐   USB FS ISO IN   ┌──────────┐
-│ 320x240/160x120│ ───────────────► │ JPEG frame 12KB │ ────────────────► │ UVC host  │
-│ MJPEG 30/15fps│    PA0-7/PB3-9    │ EP1 ISO dbl-buf │   EP 0x81, 184B   │ camera app│
+│ 320x240/160x120/640x360│ ─────► │ JPEG frame 16KB │ ────────────────► │ UVC host  │
+│ MJPEG 30fps   │    PA0-7/PB3-9    │ EP1 ISO dbl-buf │   EP 0x81, 184B   │ camera app│
 └──────────────┘                    └─────────────────┘                   └──────────┘
 ```
 
@@ -70,11 +70,10 @@ wait for previous frame EOF on the bus → load null packets into both buffers
   real webcam does between frames
 - Host view: one "slowly produced" frame (nulls + data + EOF), no lost
   packets inside a frame
-- Resolutions/frame rates: descriptors advertise 320x240 and 160x120, each
-  with 30/15 fps options (selectable in the camera properties); the selected
-  rate paces the host renderer, actual output is pipeline-limited to roughly
-  10–13 fps (320x240) / 15–18 fps (160x120)
-- Frames larger than 12 KB (dwMaxVideoFrameBufferSize in the descriptors) are dropped
+- Resolutions/frame rates: descriptors advertise 320x240, 160x120 and 640x360, each
+  at a fixed 30 fps; the advertised rate paces the host renderer, actual output is pipeline-limited to roughly
+  10–13 fps (320x240) / 15–18 fps (160x120) / 6–8 fps (640x360, send-bandwidth limited)
+- Frames larger than 16 KB (dwMaxVideoFrameBufferSize in the descriptors) are dropped
 
 ### PMA layout (512B)
 
@@ -94,8 +93,8 @@ wait for previous frame EOF on the bus → load null packets into both buffers
 
 ### Resource usage (armcc -O1)
 
-- Flash: ~16.4KB / 64KB
-- RAM: ~15.5KB / 20KB (including the 12KB JPEG frame buffer); UART mode: ~19.6KB / 20KB
+- Flash: ~16.5KB / 64KB
+- RAM: ~19.1KB / 20KB (including the 16KB JPEG frame buffer); UART mode: ~19.6KB / 20KB
 
 Thanks AI IDE for the help.
 
