@@ -6,6 +6,10 @@ branch:
 - stm32f1_ov2640_test: Test signal
 - stm32f1_ov2640_dma: legacy（UART 输出版本）
 
+## 文档
+
+- [应用手册](docs/app-manual.md) — 固件原理与手动复现指南（面向人）
+
 ## 项目说明
 
 STM32F103C8（Blue Pill）+ OV2640：采集 MJPEG，支持两种传输通道（编译期宏切换）：

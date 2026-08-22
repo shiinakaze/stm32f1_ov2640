@@ -6,6 +6,10 @@ branch:
 - stm32f1_ov2640_test: test signal
 - stm32f1_ov2640_dma: legacy (UART output version)
 
+## Documentation
+
+- [Application manual](docs/app-manual.md) — how the firmware works, step by step (for manual re-implementation)
+
 ## Overview
 
 STM32F103C8 (Blue Pill) + OV2640: captures MJPEG and supports two transport channels (compile-time switch):
@@ -94,4 +98,5 @@ wait for previous frame EOF on the bus → load null packets into both buffers
 - RAM: ~15.5KB / 20KB (including the 12KB JPEG frame buffer); UART mode: ~19.6KB / 20KB
 
 Thanks AI IDE for the help.
+
 Thanks GLM for the help.
