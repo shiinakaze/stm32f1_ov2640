@@ -40,14 +40,14 @@ USB 侧只需要两个端点：
 | VSYNC / HREF / RESET | PB3 / PB4 / PB5 |
 | PCLK / PWDN | PB8 / PB9 |
 | USB DM / DP | PA11 / PA12（固定，不可改） |
-| SCCB | 软件 SCCB（见 `drivers/sccb.c`） |
+| SCCB | 软件 SCCB（见 `drivers/device/camera/sccb/sccb.c`） |
 | UART1 TX（调试通道） | PA9 |
-| OLED（调试显示） | PB6 / PB7（软件 I2C，`drivers/i2c.c`） |
+| OLED（调试显示） | PB6 / PB7（软件 I2C，`drivers/peripheral/i2c/sw_i2c.c`） |
 
 要点：
 
 - PB3/PB4 默认是 JTAG 引脚，须先 `GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE)`
-  （保留 SWD）——本工程在 `drivers/i2c.c` 中完成。
+  （保留 SWD）——本工程在 `drivers/peripheral/i2c/sw_i2c.c` 中完成。
 - PA11/PA12 只需使能 USB 时钟，外设自动接管，无需 GPIO 配置。
 - **Blue Pill 必须有 D+ 1.5kΩ 上拉（R10）**，部分板子缺件会导致主机根本不开始枚举。
 
@@ -83,7 +83,7 @@ usb_bsp_init();   /* USBCLK=PLL/1.5，使能 USB 时钟，NVIC 使能 USB_LP_CAN
 USB_Init();       /* 库入口 → Device_Property.Init() → PowerOn + USB_SIL_Init */
 ```
 
-中断服务函数加在 `app/stm32f10x_it.c`：
+中断服务函数加在所属模块 `middleware/usb/uvc/usb_istr.c`（中断随模块分散，不设集中的 stm32f10x_it.c）：
 
 ```c
 void USB_LP_CAN1_RX0_IRQHandler(void) { USB_Istr(); }
@@ -94,7 +94,7 @@ SOF 中断不需要——ISO 发送由 CTR_TX 驱动（见第 6 节），屏蔽�
 省掉每毫秒一次的中断。
 
 > 坑：`usb_lib.h` 第 44 行 `#include "hw_config.h"` 是给 ST 官方例程留的应用头，
-> 需要自己提供一个（内容只需 `#include "main.h"`）。
+> 需要自己提供一个（内容只需 `#include "app.h"`）。
 
 ---
 
@@ -292,7 +292,7 @@ uvc_stream_disable():  /* alt0 / 复位 / 挂起 */
 
 ---
 
-## 7. 采集与 USB 的并发（`main.c` + `drivers/ov2640.c`）
+## 7. 采集与 USB 的并发（`app/app_main.c` + `drivers/device/camera/sensor/ov2640/ov2640.c`）
 
 ### 7.1 为什么不能并发
 
@@ -322,7 +322,7 @@ OV2640 采集是 `while(PCLK==0); 读 GPIO; while(PCLK==1);` 的位扫描轮询�
 帧间 40ms 空包流 + 正常数据包。对主机来说这是一帧"产生得很慢"的视频，
 帧内零丢包——完全合法的 UVC 行为。
 
-### 7.4 OV2640 驱动侧要点（`drivers/ov2640.c`）
+### 7.4 OV2640 驱动侧要点（`drivers/device/camera/sensor/ov2640/ov2640.c`）
 
 - **初始化校验链**：GPIO/硬件复位 → SCCB → 读 PID（PIDH=0x26，重试 3 次）→
   下载 SVGA 基础表 + JPEG 模式表（来源：OV2640 Software Application Notes 1.03
@@ -399,13 +399,13 @@ PMA 前 64 字节是 BTABLE（8 个端点 × 8B）。只用 EP0/EP1 时，
 - [ ] CTR_TX 回调按 DTOG_TX 选缓冲，`SetEPDblBuf{0,1}Count(EP_DBUF_IN, n)`
 - [ ] EOF 包发完 → 双缓冲装空包 → 才允许锁中断采集
 - [ ] feed 顺序：指针 → 标志 → 长度
-- [ ] `stm32f10x_it.c` 挂 `USB_LP_CAN1_RX0_IRQHandler`
+- [ ] `middleware/usb/uvc/usb_istr.c` 挂 `USB_LP_CAN1_RX0_IRQHandler`（中断随所属模块）
 - [ ] PB3/PB4 用前关 JTAG
 - [ ] PCLK 分频 ≤900kHz（`OV2640_DVP_SPEED_DIV` ≥50 一律先反汇编数周期）
 - [ ] 上板看 OLED：PID/MID 正常、开流后 F 计数增长；ffplay 强制各分辨率出图
 
 ---
 
-*实现参照：`middleware/usb/uvc/`（应用层）、`app/main.c`（流水线）、
-`drivers/ov2640.c`（采集）、`middleware/usb/Projects/STM32F407-UVC/`（F4 参考工程，
+*实现参照：`middleware/usb/uvc/`（应用层）、`app/app_main.c`（流水线）、
+`drivers/device/camera/sensor/ov2640/ov2640.c`（采集）、`examples/vendor/Projects/STM32F407-UVC/`（F4 参考工程，
 仅描述符结构可参考，端点驱动模型完全不同）。*

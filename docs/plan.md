@@ -15,9 +15,13 @@
   实时显示 F=已送出帧数 / E=丢弃帧数——F 增长而画面黑 → 主机侧问题；
   E 增长 → 采集侧问题。初始化失败会显示错误码并停机（1=SCCB 无应答，
   2=PID 不符，3=IMAGE_MODE 回读校验失败）。
-- **Git**：main 分支；仓库内 `middleware/usb/Projects/STM32F407-UVC/` 是 untracked 的
+- **Git**：main 分支；仓库内 `examples/vendor/Projects/STM32F407-UVC/` 是已入库的
   F4 参考工程（红龙 407 板），只可参考其描述符结构与 OV2640 窗口寄存器写法，
   **端点驱动模型与 F1 完全不同，勿照抄**。
+- **目录结构**：按 AN-SDK-001《嵌入式 SDK 目录结构设计规范》分层
+  （arch/chip/boards/drivers\{peripheral,device}/kernel/middleware/app/examples/tests/build），
+  引脚/外设选择宏集中在 `boards/bluepill/board_config.h`；
+  `kernel/` 放裸机引导 main()（baremetal/main.c，入口与应用 app_main() 解耦）；`tests/` 为 .gitkeep 占位。
 
 ## 2. 构建环境
 
@@ -27,24 +31,27 @@
   "C:/Users/shiinakaze/AppData/Local/Keil_v5/UV4/UV4.exe" -b stm32f1_ov2640.uvprojx -j0 -o build.log
   ```
   （`-b` 增量，`-r` 全量；退出码 0 = 成功。）
-- 传输通道切换：`app/main.h` 的 `APP_TRANSPORT`（`APP_TRANSPORT_UVC` / `APP_TRANSPORT_UART`）。
+- 传输通道切换：`app/app.h` 的 `APP_TRANSPORT`（`APP_TRANSPORT_UVC` / `APP_TRANSPORT_UART`）。
 - 两种配置的占用（armcc -O1，2026-08 实测）：
 
   | 配置 | Flash | RAM（/20480B） |
   |---|---|---|
-  | UVC | Code 15596 + RO 1372 | RW 1888 + ZI 17672 = **19560**（裕量约 920B，含 16KB 帧缓冲） |
-  | UART | Code 17564 + RO 1372 | RW 1896 + ZI 17648 = **19544**（裕量约 940B，双 8KB 缓冲） |
+  | UVC | Code 14440 + RO 1372 | RW 1888 + ZI 17672 = **19560**（裕量约 920B，含 16KB 帧缓冲） |
+  | UART | Code 16408 + RO 1372 | RW 1896 + ZI 17648 = **19544**（裕量约 940B，双 8KB 缓冲） |
 
   两种模式都会编译 USB 栈（UART 模式不初始化、外设保持复位，只多占 Flash）。
 
 ## 3. 代码地图
 
 ```
-app/main.c               主循环：UVC 串行流水线 / UART 双缓冲流水线（#if 分支）；
+kernel/baremetal/main.c  裸机引导：main() 只调 app_main()（入口与应用解耦）
+app/app_main.c           应用主函数：UVC 串行流水线 / UART 双缓冲流水线（#if 分支）；
                          UVC 帧缓冲 16KB；OLED F/E 帧计数诊断；init 失败报错停机
-app/main.h               APP_TRANSPORT 宏
-app/stm32f10x_it.c       USB_LP_CAN1_RX0_IRQHandler → USB_Istr()
-drivers/ov2640.c/.h      传感器驱动：ov2640_init() 返回 ov2640_err_t
+app/app.h                APP_TRANSPORT 宏 + app_main() 声明
+boards/bluepill/
+  board_config.h         板级引脚/外设选择宏（Blue Pill 连接关系总表）
+drivers/device/camera/sensor/ov2640/
+  ov2640.c/.h            传感器驱动：ov2640_init() 返回 ov2640_err_t
                          （PIDH=0x26 校验 + IMAGE_MODE 回读哨兵）；
                          内部 bank 缓存的 write_reg/read_reg（自动写 0xFF 组切换）；
                          capture 拆分为 帧同步/位扫描读帧/JPEG 标记定位 三段，
@@ -52,14 +59,21 @@ drivers/ov2640.c/.h      传感器驱动：ov2640_init() 返回 ov2640_err_t
                          OV2640_DVP_SPEED_DIV 宏控制 PCLK（当前 64 → 750kHz）；
                          set_output_size 按输出宽高比裁剪 DSP 输入窗口（640x360
                          16:9 → 在 640x480 窗口内垂直居中裁剪，避免画面压扁）
-drivers/ov2640_config.c/.h  寄存器表：svga_rgb565_25fps_cfg（177 项，与 OV2640
+drivers/device/camera/sensor/ov2640/
+  ov2640_config.c/.h     寄存器表：svga_rgb565_25fps_cfg（177 项，与 OV2640
                          Software Application Notes 1.03 §13.2 逐项一致）+
                          ov2640_jpeg_mode_cfg；extern 用 _len 常量声明长度；
                          寄存器名宏对应 DS V1.6 表 12/13
-drivers/sccb.c, i2c.c    软件 SCCB（write/read_reg 返回状态码，读为出参式）；
-                         i2c.c 里有 SWJ_JTAGDisable（PB3/PB4 可用前提）
-drivers/uart.c           UART1 TX DMA（DMA1_CH4，无中断，1.5Mbaud）
-middleware/delay.c       SysTick 延时，MCU_SYSCLK=72（曾误写 128 导致延时偏慢 1.78 倍）
+drivers/device/camera/sccb/
+  sccb.c/.h              软件 SCCB（write/read_reg 返回状态码，读为出参式）
+drivers/peripheral/i2c/
+  sw_i2c.c/.h            软件 I2C（sw_i2c_init/start/stop/transmit_byte）；
+                         SWJ_JTAGDisable 在此（PB3/PB4 可用前提）
+drivers/peripheral/uart/
+  uart.c                 UART1 TX DMA（DMA1_CH4，无中断，1.5Mbaud）
+drivers/peripheral/timer/
+  timer.c                SysTick 延时 delay_us/ms/s，MCU_SYSCLK=72
+                         （曾误写 128 导致延时偏慢 1.78 倍）
 middleware/usb/src|inc   ST USB-FS-Device 库 V4.1.0（勿改）
 middleware/usb/uvc/      UVC 应用层（本项目核心增量）：
   usb_conf.h             PMA 地址、EP_NUM、IMR_MSK、EP 回调映射（EP1_IN_Callback→uvc_ep1_in_callback）
@@ -67,7 +81,8 @@ middleware/usb/uvc/      UVC 应用层（本项目核心增量）：
                          3 个 30B 帧描述符，全部单档 333333 = 30fps）
   usb_prop.c/.h          DEVICE_PROP/Device_Table/User_Standard_Requests、probe/commit、EP 初始化
   usb_pwr.c/.h           PowerOn/Suspend/Resume（简化版，不做时钟门控）、DEVICE_STATE 枚举
-  usb_istr.c/.h          USB_Istr 事件分发（CTR/RESET/SUSP/WKUP/ESOF；SOF 未启用）
+  usb_istr.c/.h          USB_Istr 事件分发（CTR/RESET/SUSP/WKUP/ESOF；SOF 未启用）；
+                         USB_LP_CAN1_RX0_IRQHandler 挂于此（中断随所属模块，无集中 it.c）
   usb_bsp.c/.h           USB 时钟/NVIC、usb_irq_lock/unlock（NVIC 关/开 USB 中断）、U_ID 序列号
   usbd_uvc.c/.h          ★ 流式状态机：load_next_packet（CTR 驱动装包）、静默模式、
                          commit 解析（res_table 帧索引→分辨率查表，非法索引回退 320x240）
@@ -132,13 +147,13 @@ README.md / README.zh-CN.md  英文/简体中文说明
    （发完立即装下一包，提前近 1ms），SOF 从中断屏蔽中移除。
 3. 双缓冲帧缓冲（UART 时代）在 UVC 串行流水线下无意义，改单缓冲，腾出 RAM
    （现为 16KB，配合 640x360）。
-4. `usb_lib.h` 需要应用层提供 `hw_config.h`（垫片只含 `#include "main.h"`）。
+4. `usb_lib.h` 需要应用层提供 `hw_config.h`（垫片只含 `#include "app.h"`）。
 5. 类请求码（GET_CUR 0x81 等）不在库头文件里，需在 `usb_prop.h` 自行定义。
 6. **黑屏 v2（已修复）**：R_DVP_SP 从 0x64（480kHz）提速到 0x20（1.5MHz）后
    采集轮询跟不上（每字节 CPU 700~840ns > 667ns 字节周期）→ 全帧丢弃、主机只收
    空包、Windows 相机黑屏。修复 = 分频 64（750kHz）+ OLED F/E 帧计数诊断。
    教训：采集提速前先反汇编数指令周期。
-7. `middleware/delay.c` 的 MCU_SYSCLK 误写 128（超频时代残留），而系统实为 72MHz，
+7. `drivers/peripheral/timer/timer.c`（原 delay.c）的 MCU_SYSCLK 误写 128（超频时代残留），而系统实为 72MHz，
    所有延时偏慢 1.78 倍（SCCB 时钟偏慢无害但失真）。已改 72。
 8. Windows 相机 15fps-only 不出画面 → 帧描述符全部改 30fps 单档
    （15fps 档曾被短暂引入后又移除）。

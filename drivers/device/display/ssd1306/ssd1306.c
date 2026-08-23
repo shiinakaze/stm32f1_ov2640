@@ -1,15 +1,11 @@
-#include "oled.h"
-#include "oled_font.h"
-#include "delay.h"
+#include "ssd1306.h"
+#include "ssd1306_font.h"
+#include "timer.h"
 
 // SSD1306 configuration
-#define SSD1306_Clock RCC_APB2Periph_GPIOB
-#define SSD1306_GPIOx GPIOB
-#define SSD1306_SCL_Pin GPIO_Pin_4
-#define SSD1306_SDA_Pin GPIO_Pin_5
-#define SSD1306_Slave_Address 0x78
-#define SSD1306_Control_Command 0x00
-#define SSD1306_Control_Data 0x40
+#define SSD1306_SLAVE_ADDRESS 0x78
+#define SSD1306_CONTROL_COMMAND 0x00
+#define SSD1306_CONTROL_DATA 0x40
 
 /**
  * @brief  	Write commands to the device using I2C
@@ -20,8 +16,8 @@
 void i2c_wc_ssd1306(uint8_t command)
 {
 	sw_i2c_start();
-	sw_i2c_transmit_byte(SSD1306_Slave_Address);	  // slave address
-	sw_i2c_transmit_byte(SSD1306_Control_Command); // write command
+	sw_i2c_transmit_byte(SSD1306_SLAVE_ADDRESS);	  // slave address
+	sw_i2c_transmit_byte(SSD1306_CONTROL_COMMAND); // write command
 	sw_i2c_transmit_byte(command);
 	sw_i2c_stop();
 }
@@ -36,8 +32,8 @@ void i2c_wd_ssd1306(uint8_t data)
 {
 	// If you want to use hardware I2C, you can modify this function.
 	sw_i2c_start();
-	sw_i2c_transmit_byte(SSD1306_Slave_Address); // slave address
-	sw_i2c_transmit_byte(SSD1306_Control_Data);	// write data
+	sw_i2c_transmit_byte(SSD1306_SLAVE_ADDRESS); // slave address
+	sw_i2c_transmit_byte(SSD1306_CONTROL_DATA);	// write data
 	sw_i2c_transmit_byte(data);
 	sw_i2c_stop();
 }
@@ -48,11 +44,11 @@ void i2c_wd_ssd1306(uint8_t data)
  * @param  X With the upper left corner as the origin, the coordinates in the right direction, range 0-127
  * @retval None
  */
-void oled_set_cursor(uint8_t y, uint8_t x)
+void ssd1306_set_cursor(uint8_t y, uint8_t x)
 {
 	i2c_wc_ssd1306(0xB0 | y);							  // Set Y position
 	i2c_wc_ssd1306(0x10 | ((x & 0xF0) >> 4));			  // Set X position 4 bits higher
-	i2c_wc_ssd1306(SSD1306_Control_Command | (x & 0x0F)); // Set X position 4 bits lower
+	i2c_wc_ssd1306(SSD1306_CONTROL_COMMAND | (x & 0x0F)); // Set X position 4 bits lower
 }
 
 /**
@@ -60,15 +56,15 @@ void oled_set_cursor(uint8_t y, uint8_t x)
  * @param  None
  * @retval None
  */
-void oled_clear(void)
+void ssd1306_clear(void)
 {
 	uint8_t i, j;
 	for (j = 0; j < 8; j++)
 	{
-		oled_set_cursor(j, 0);
+		ssd1306_set_cursor(j, 0);
 		for (i = 0; i < 128; i++)
 		{
-			i2c_wd_ssd1306(SSD1306_Control_Command);
+			i2c_wd_ssd1306(SSD1306_CONTROL_COMMAND);
 		}
 	}
 }
@@ -80,15 +76,15 @@ void oled_clear(void)
  * @param  Char A character to display, range: ASCII characters
  * @retval None
  */
-void oled_show_char(uint8_t line, uint8_t column, uint8_t chr)
+void ssd1306_show_char(uint8_t line, uint8_t column, uint8_t chr)
 {
 	uint8_t i;
-	oled_set_cursor((line - 1) * 2, (column - 1) * 8); // Set the cursor position in the top half
+	ssd1306_set_cursor((line - 1) * 2, (column - 1) * 8); // Set the cursor position in the top half
 	for (i = 0; i < 8; i++)
 	{
 		i2c_wd_ssd1306(font_8x16[chr - ' '][i]); // Displays the top half of the content
 	}
-	oled_set_cursor((line - 1) * 2 + 1, (column - 1) * 8); // Set the cursor position in the bottom half
+	ssd1306_set_cursor((line - 1) * 2 + 1, (column - 1) * 8); // Set the cursor position in the bottom half
 	for (i = 0; i < 8; i++)
 	{
 		i2c_wd_ssd1306(font_8x16[chr - ' '][i + 8]); // Displays the bottom half of the content
@@ -102,12 +98,12 @@ void oled_show_char(uint8_t line, uint8_t column, uint8_t chr)
  * @param  String String to display, range: ASCII characters
  * @retval None
  */
-void oled_show_string(uint8_t line, uint8_t column, uint8_t *str)
+void ssd1306_show_string(uint8_t line, uint8_t column, uint8_t *str)
 {
 	uint8_t i;
 	for (i = 0; str[i] != '\0'; i++)
 	{
-		oled_show_char(line, column + i, str[i]);
+		ssd1306_show_char(line, column + i, str[i]);
 	}
 }
 
@@ -115,7 +111,7 @@ void oled_show_string(uint8_t line, uint8_t column, uint8_t *str)
  * @brief  OLED power function
  * @retval The return value is equal to X to the Y power
  */
-uint32_t oled_pow(uint32_t x, uint32_t y)
+uint32_t ssd1306_pow(uint32_t x, uint32_t y)
 {
 	uint32_t result = 1;
 	while (y--)
@@ -133,13 +129,13 @@ uint32_t oled_pow(uint32_t x, uint32_t y)
  * @param  Length To display the length of the number, the value ranges from 1 to 10
  * @retval None
  */
-void oled_show_num(uint8_t line, uint8_t column, uint32_t number, uint8_t length)
+void ssd1306_show_num(uint8_t line, uint8_t column, uint32_t number, uint8_t length)
 {
 	uint8_t i;
 	for (i = 0; i < length; i++)
 	{
-		oled_show_char(line, column + i,
-					  number / oled_pow(10, length - i - 1) % 10 + '0');
+		ssd1306_show_char(line, column + i,
+					  number / ssd1306_pow(10, length - i - 1) % 10 + '0');
 	}
 }
 
@@ -151,25 +147,25 @@ void oled_show_num(uint8_t line, uint8_t column, uint32_t number, uint8_t length
  * @param  Length To display the length of the number, the value ranges from 1 to 10
  * @retval None
  */
-void oled_show_signed_num(uint8_t line, uint8_t column, int32_t number,
+void ssd1306_show_signed_num(uint8_t line, uint8_t column, int32_t number,
 						uint8_t length)
 {
 	uint8_t i;
 	uint32_t number1;
 	if (number >= 0)
 	{
-		oled_show_char(line, column, '+');
+		ssd1306_show_char(line, column, '+');
 		number1 = number;
 	}
 	else
 	{
-		oled_show_char(line, column, '-');
+		ssd1306_show_char(line, column, '-');
 		number1 = -number;
 	}
 	for (i = 0; i < length; i++)
 	{
-		oled_show_char(line, column + i + 1,
-					  number1 / oled_pow(10, length - i - 1) % 10 + '0');
+		ssd1306_show_char(line, column + i + 1,
+					  number1 / ssd1306_pow(10, length - i - 1) % 10 + '0');
 	}
 }
 
@@ -181,20 +177,20 @@ void oled_show_signed_num(uint8_t line, uint8_t column, int32_t number,
  * @param  Length To display the number length, the value ranges from 1 to 8
  * @retval None
  */
-void oled_show_hex_num(uint8_t line, uint8_t column, uint32_t number,
+void ssd1306_show_hex_num(uint8_t line, uint8_t column, uint32_t number,
 					 uint8_t length)
 {
 	uint8_t i, single_number;
 	for (i = 0; i < length; i++)
 	{
-		single_number = number / oled_pow(16, length - i - 1) % 16;
+		single_number = number / ssd1306_pow(16, length - i - 1) % 16;
 		if (single_number < 10)
 		{
-			oled_show_char(line, column + i, single_number + '0');
+			ssd1306_show_char(line, column + i, single_number + '0');
 		}
 		else
 		{
-			oled_show_char(line, column + i, single_number - 10 + 'A');
+			ssd1306_show_char(line, column + i, single_number - 10 + 'A');
 		}
 	}
 }
@@ -207,14 +203,14 @@ void oled_show_hex_num(uint8_t line, uint8_t column, uint32_t number,
  * @param  Length To display the number length, the value ranges from 1 to 16
  * @retval None
  */
-void oled_show_bin_num(uint8_t line, uint8_t column, uint32_t number,
+void ssd1306_show_bin_num(uint8_t line, uint8_t column, uint32_t number,
 					 uint8_t length)
 {
 	uint8_t i;
 	for (i = 0; i < length; i++)
 	{
-		oled_show_char(line, column + i,
-					  number / oled_pow(2, length - i - 1) % 2 + '0');
+		ssd1306_show_char(line, column + i,
+					  number / ssd1306_pow(2, length - i - 1) % 2 + '0');
 	}
 }
 
@@ -223,7 +219,7 @@ void oled_show_bin_num(uint8_t line, uint8_t column, uint32_t number,
  * @param  None
  * @retval None
  */
-void oled_init(void)
+void ssd1306_init(void)
 {
 
 	delay_s(1);
@@ -260,5 +256,5 @@ void oled_init(void)
 
 	i2c_wc_ssd1306(0xAF); // Display On AFh
 
-	oled_clear(); // OLED Clear
+	ssd1306_clear(); // OLED Clear
 }

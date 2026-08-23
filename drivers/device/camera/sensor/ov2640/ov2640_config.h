@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "main.h"
+#include "app.h"
 
 /*
  * OV2640 寄存器地址映射（命名对应 DS V1.6 表 12 / 表 13）。

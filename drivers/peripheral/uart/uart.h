@@ -1,19 +1,12 @@
 #ifndef _UART_H
 #define _UART_H
 
-#include "main.h"
+#include "app.h"
+#include "board_config.h"
 #include <stdio.h>
 #include <string.h>
 
-#define RCC_APB_UART1_GPIO      RCC_APB2Periph_GPIOA
-#define RCC_APB_UART1           RCC_APB2Periph_USART1
-#define RCC_AHB_UART1_DMA       RCC_AHBPeriph_DMA1
-
-#define UART1_GPIO              GPIOA
-#define UART1_TX_PIN            GPIO_Pin_9
-#define UART1_RX_PIN            GPIO_Pin_10
-
-#define UART1_TX_DMA_CHANNEL    DMA1_Channel4   // USART1_TX -> DMA1 Channel4
+/* 引脚/外设选择（USART1、DMA1_Channel4）见 boards/bluepill/board_config.h */
 
 void uart1_init(uint32_t baudrate);
 void uart1_dma_init(void);

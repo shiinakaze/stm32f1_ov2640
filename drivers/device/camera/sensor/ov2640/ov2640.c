@@ -2,7 +2,7 @@
 
 #include "ov2640.h"
 #include "sccb.h"
-#include "delay.h"
+#include "timer.h"
 
 /* 寄存器组编号（写入 RA_DLMT 0xFF 的值，DS §8） */
 #define OV2640_BANK_DSP 0x00
@@ -115,7 +115,7 @@ static void ov2640_load_config(const ov2640_cfg_item_t *cfg, uint16_t len)
  * @brief  摄像头引脚初始化
  * @note   VSYNC/HREF 使用 PB3/PB4，依赖关闭 JTAG 的重映射
  *         （GPIO_Remap_SWJ_JTAGDisable，在 drivers/i2c.c 的软件 I2C
- *         初始化中执行），因此 main() 必须先 oled_init() 再 ov2640_init()
+ *         初始化中执行），因此 main() 必须先 ssd1306_init() 再 ov2640_init()
  */
 static void ov2640_io_init(void)
 {

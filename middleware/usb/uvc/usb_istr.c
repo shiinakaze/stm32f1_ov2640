@@ -141,3 +141,12 @@ void USB_Istr(void)
     }
 #endif
 }
+
+/**
+  * @brief  USB 低优先级中断（CTR/复位/SOF/挂起等所有 USB 事件）。
+  *         中断处理随所属模块，不设集中的 stm32f10x_it.c
+  */
+void USB_LP_CAN1_RX0_IRQHandler(void)
+{
+    USB_Istr();
+}

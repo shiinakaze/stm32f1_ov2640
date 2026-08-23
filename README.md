@@ -19,7 +19,7 @@ STM32F103C8 (Blue Pill) + OV2640: captures MJPEG and supports two transport chan
 
 ### Switching transport
 
-Select in `app/main.h` (rebuild after changing):
+Select in `app/app.h` (rebuild after changing):
 
 ```c
 #define APP_TRANSPORT APP_TRANSPORT_UVC   // or APP_TRANSPORT_UART
@@ -41,6 +41,25 @@ OV2640 (DVP, GPIO bit-bang)           STM32F103C8 @72MHz               PC
 - USB stack: ST classic USB-FS-Device library (`middleware/usb/src`)
 - UVC class: `middleware/usb/uvc/` (descriptors, probe/commit negotiation, CTR-driven packet engine)
 - Firmware must run at 72 MHz (USBCLK = PLL/1.5 = 48 MHz); 128 MHz overclocking is not supported
+
+### Repository layout
+
+Layered per the embedded SDK directory-structure convention (AN-SDK-001):
+
+```
+arch/arm/cortex-m3/       CMSIS core (CPU architecture layer)
+chip/stm32f103/           device header, system init, startup, SPL vendor lib (spl/)
+boards/bluepill/          board_config.h — pin / peripheral-instance selects
+drivers/peripheral/       self-written peripheral drivers: timer, sw_i2c
+drivers/device/           external device drivers: ov2640 camera (+sccb/ bus), ssd1306 display, sht30 sensor
+middleware/               usb (ST USB-FS-Device lib + UVC class)
+app/                      app_main() application entry, transport switch
+examples/vendor/          ST reference projects (not compiled)
+kernel/baremetal/         bare-metal boot: main() trampoline → app_main()
+tests/                    unit / integration tests (reserved)
+tools/                    PC-side receiver & memory report scripts
+build/                    Keil output (obj/, map/) — gitignored
+```
 
 ### Key design 1: double-buffered ISO semantics on F1 (RM0008 §23.4.4)
 

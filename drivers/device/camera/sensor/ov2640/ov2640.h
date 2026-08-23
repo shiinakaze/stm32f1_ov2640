@@ -5,7 +5,8 @@
 extern "C" {
 #endif
 
-#include "main.h"
+#include "app.h"
+#include "board_config.h"
 #include "ov2640_config.h"
 
 /* SCCB 器件地址（DS §8：写 0x60 / 读 0x61） */
@@ -19,29 +20,7 @@ typedef enum {
     OV2640_ERR_CONFIG,  /* 配置下载后回读校验失败 */
 } ov2640_err_t;
 
-/* 时钟：GPIOA + GPIOB（数据口 GPIOA，控制口/SCCB GPIOB） */
-#define RCC_APB_OV2640 (RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
-
-/* 控制引脚（GPIOB）。SCCB 引脚 SIO_C/SIO_D 定义在 sccb.h */
-
-#define PCLK_PWDN_HREF_RESET_VSYNC_GPIO GPIOB
-
-#define VSYNC_PIN GPIO_Pin_3
-#define HREF_PIN GPIO_Pin_4
-#define RESET_PIN GPIO_Pin_5
-#define PCLK_PIN GPIO_Pin_8
-#define PWDN_PIN GPIO_Pin_9
-
-/* 数据引脚 D0-D7（GPIOA 低 8 位） */
-#define DATA_GPIO GPIOA
-#define DATA0_PIN GPIO_Pin_0
-#define DATA1_PIN GPIO_Pin_1
-#define DATA2_PIN GPIO_Pin_2
-#define DATA3_PIN GPIO_Pin_3
-#define DATA4_PIN GPIO_Pin_4
-#define DATA5_PIN GPIO_Pin_5
-#define DATA6_PIN GPIO_Pin_6
-#define DATA7_PIN GPIO_Pin_7
+/* DVP 数据/控制引脚与时钟见 boards/bluepill/board_config.h */
 
 #define OV2640_READ_DATA() ((uint8_t)(DATA_GPIO->IDR & 0x00FF))
 

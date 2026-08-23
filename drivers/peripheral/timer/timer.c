@@ -1,4 +1,4 @@
-#include "delay.h"
+#include "timer.h"
 
 /* 系统时钟 72MHz（SystemInit：SYSCLK_FREQ_72MHz，UVC 需 48MHz USB 时钟）。
  * 注意：单次 delay_us 的 us 值不得超过 0xFFFFFF/72 ≈ 233016，

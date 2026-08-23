@@ -38,27 +38,27 @@ static void sw_sccb_sio_d_set_output(void)
 static void sw_sccb_start(void)
 {
     // make sure SIO_C SIO_D high
-    SW_SIO_C_Write(Bit_SET);
-    SW_SIO_D_Write(Bit_SET);
-    SW_SCCB_Delay();
+    SW_SIO_C_WRITE(Bit_SET);
+    SW_SIO_D_WRITE(Bit_SET);
+    SW_SCCB_DELAY();
     // SCCB Start condition
-    SW_SIO_D_Write(Bit_RESET);
-    SW_SCCB_Delay();
-    SW_SIO_C_Write(Bit_RESET);
-    SW_SCCB_Delay();
+    SW_SIO_D_WRITE(Bit_RESET);
+    SW_SCCB_DELAY();
+    SW_SIO_C_WRITE(Bit_RESET);
+    SW_SCCB_DELAY();
 }
 
 /** 停止条件：SIO_C 高电平期间 SIO_D 由低变高 */
 static void sw_sccb_stop(void)
 {
     // make sure SIO_D low
-    SW_SIO_D_Write(Bit_RESET);
-    SW_SCCB_Delay();
+    SW_SIO_D_WRITE(Bit_RESET);
+    SW_SCCB_DELAY();
     // SCCB Stop condition
-    SW_SIO_C_Write(Bit_SET);
-    SW_SCCB_Delay();
-    SW_SIO_D_Write(Bit_SET);
-    SW_SCCB_Delay();
+    SW_SIO_C_WRITE(Bit_SET);
+    SW_SCCB_DELAY();
+    SW_SIO_D_WRITE(Bit_SET);
+    SW_SCCB_DELAY();
 }
 
 /**
@@ -72,26 +72,26 @@ static uint8_t sw_sccb_write_byte(uint8_t byte)
     {
         if (byte & 0x80)
         {
-            SW_SIO_D_Write(Bit_SET);
+            SW_SIO_D_WRITE(Bit_SET);
         }
         else
         {
-            SW_SIO_D_Write(Bit_RESET);
+            SW_SIO_D_WRITE(Bit_RESET);
         }
         byte <<= 1;
-        SW_SCCB_Delay();
-        SW_SIO_C_Write(Bit_SET);
-        SW_SCCB_Delay();
-        SW_SIO_C_Write(Bit_RESET);
-        SW_SCCB_Delay();
+        SW_SCCB_DELAY();
+        SW_SIO_C_WRITE(Bit_SET);
+        SW_SCCB_DELAY();
+        SW_SIO_C_WRITE(Bit_RESET);
+        SW_SCCB_DELAY();
     }
     sw_sccb_sio_d_set_input();
-    SW_SCCB_Delay();
-    SW_SIO_C_Write(Bit_SET);
-    x_bit = SW_SIO_D_Read(); // X/Don't care bit, typical value is 0
-    SW_SCCB_Delay();
-    SW_SIO_C_Write(Bit_RESET);
-    SW_SCCB_Delay();
+    SW_SCCB_DELAY();
+    SW_SIO_C_WRITE(Bit_SET);
+    x_bit = SW_SIO_D_READ(); // X/Don't care bit, typical value is 0
+    SW_SCCB_DELAY();
+    SW_SIO_C_WRITE(Bit_RESET);
+    SW_SCCB_DELAY();
     sw_sccb_sio_d_set_output();
 
     // check sccb data
@@ -114,22 +114,22 @@ static uint8_t sw_sccb_read_byte(uint8_t *data)
     sw_sccb_sio_d_set_input();
     for (uint8_t i = 0; i < 8; i++)
     {
-        SW_SCCB_Delay();
-        SW_SIO_C_Write(Bit_SET);
-        if (SW_SIO_D_Read())
+        SW_SCCB_DELAY();
+        SW_SIO_C_WRITE(Bit_SET);
+        if (SW_SIO_D_READ())
         {
             byte |= (0x80 >> i);
         }
-        SW_SCCB_Delay();
-        SW_SIO_C_Write(Bit_RESET);
-        SW_SCCB_Delay();
+        SW_SCCB_DELAY();
+        SW_SIO_C_WRITE(Bit_RESET);
+        SW_SCCB_DELAY();
     }
-    SW_SCCB_Delay();
-    SW_SIO_C_Write(Bit_SET);
-    na_bit = SW_SIO_D_Read(); // NA bit, typical value is 1
-    SW_SCCB_Delay();
-    SW_SIO_C_Write(Bit_RESET);
-    SW_SCCB_Delay();
+    SW_SCCB_DELAY();
+    SW_SIO_C_WRITE(Bit_SET);
+    na_bit = SW_SIO_D_READ(); // NA bit, typical value is 1
+    SW_SCCB_DELAY();
+    SW_SIO_C_WRITE(Bit_RESET);
+    SW_SCCB_DELAY();
     sw_sccb_sio_d_set_output();
 
     if (na_bit != 1)

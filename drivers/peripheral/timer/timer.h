@@ -1,9 +1,10 @@
-#include "main.h"
-#ifndef _DELAY_H
-#define _DELAY_H
+#ifndef _TIMER_H
+#define _TIMER_H
+
+#include "stm32f10x.h"
 
 void delay_us(uint32_t us);
 void delay_ms(uint32_t ms);
 void delay_s(uint32_t s);
 
-#endif
+#endif // _TIMER_H

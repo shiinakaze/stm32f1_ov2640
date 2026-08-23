@@ -517,7 +517,7 @@ def _level_color(level: str) -> str:
 
 def _find_map_file(project_dir: str) -> Optional[str]:
     """自动查找 .map 文件。"""
-    search_dirs = ["Listings", "Objects", "Output", "MDK-ARM", ""]
+    search_dirs = ["build/map", "build/obj", "Listings", "Objects", "Output", "MDK-ARM", ""]
     for d in search_dirs:
         base = os.path.join(project_dir, d) if d else project_dir
         if os.path.isdir(base):
@@ -1314,7 +1314,7 @@ def main() -> None:
         epilog="""
 示例:
     python memory_analyzer.py build_log.txt
-    python memory_analyzer.py build_log.txt -m Listings/stm32f1_ov2640.map
+    python memory_analyzer.py build_log.txt -m build/map/stm32f1_ov2640.map
     python memory_analyzer.py --project .                          # 自动发现项目文件
     python memory_analyzer.py build_log.txt --mcu STM32F407VG -o report.html
     python memory_analyzer.py build_log.txt --json summary.json    # 同时导出 JSON

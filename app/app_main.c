@@ -1,7 +1,7 @@
-#include "main.h"
+#include "app.h"
 #include "ov2640.h"
-#include "oled.h"
-#include "delay.h"
+#include "ssd1306.h"
+#include "timer.h"
 
 #if APP_TRANSPORT == APP_TRANSPORT_UVC
 #include "usb_lib.h"
@@ -24,7 +24,7 @@ static uint8_t jpeg_buffer[JPEG_BUFFER_SIZE];
 static uint8_t jpeg_buffer[2][JPEG_BUFFER_SIZE];
 #endif
 
-int main(void)
+void app_main(void)
 {
     ov2640_err_t err;
     uint16_t pid, mid;
@@ -39,17 +39,14 @@ int main(void)
     uint8_t capture_idx = 0;
 #endif
 
-    /* 保持 SystemInit 的 72MHz：UVC 需要 PLL/1.5 = 48MHz USB 时钟，
-     * 128MHz 超频与 USB 不兼容。 */
-
-    oled_init();
+    ssd1306_init();
     err = ov2640_init();
     if (err != OV2640_OK)
     {
         /* 传感器缺失/ID 不符/配置校验失败：显示错误码并停机，
          * 继续运行只会流出无效数据 */
-        oled_show_string(1, 1, (uint8_t *)"OV2640 init err");
-        oled_show_hex_num(2, 1, err, 2);
+        ssd1306_show_string(1, 1, (uint8_t *)"OV2640 init err");
+        ssd1306_show_hex_num(2, 1, err, 2);
         while (1)
         {
         }
@@ -65,19 +62,19 @@ int main(void)
 
     if (ov2640_get_pid(&pid) == OV2640_OK)
     {
-        oled_show_hex_num(1, 1, pid, 4);
+        ssd1306_show_hex_num(1, 1, pid, 4);
     }
     if (ov2640_get_mid(&mid) == OV2640_OK)
     {
-        oled_show_hex_num(2, 1, mid, 4);
+        ssd1306_show_hex_num(2, 1, mid, 4);
     }
 
 #if APP_TRANSPORT == APP_TRANSPORT_UVC
     /* OLED 第 3/4 行实时诊断（流式期间）：
      * F = 已送出帧数，E = 丢弃帧数（标记缺失/截断/超时）。
      * F 增长而画面黑 → 问题在 USB/主机侧；E 增长 → 采集侧丢帧 */
-    oled_show_string(3, 1, (uint8_t *)"F:");
-    oled_show_string(4, 1, (uint8_t *)"E:");
+    ssd1306_show_string(3, 1, (uint8_t *)"F:");
+    ssd1306_show_string(4, 1, (uint8_t *)"E:");
 
     usb_bsp_init();
     USB_Init();
@@ -121,8 +118,8 @@ int main(void)
         {
             frames_dropped++;
         }
-        oled_show_num(3, 3, frames_ok, 6);
-        oled_show_num(4, 3, frames_dropped, 6);
+        ssd1306_show_num(3, 3, frames_ok, 6);
+        ssd1306_show_num(4, 3, frames_dropped, 6);
     }
 #else
     while (1)

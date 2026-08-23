@@ -19,7 +19,7 @@ STM32F103C8（Blue Pill）+ OV2640：采集 MJPEG，支持两种传输通道（�
 
 ### 传输通道切换
 
-`app/main.h` 中选择（改后重新编译）：
+`app/app.h` 中选择（改后重新编译）：
 
 ```c
 #define APP_TRANSPORT APP_TRANSPORT_UVC   // 或 APP_TRANSPORT_UART
@@ -41,6 +41,25 @@ OV2640 (DVP, GPIO 位扫描)            STM32F103C8 @72MHz              PC
 - USB 协议栈：ST 经典 USB-FS-Device 库（`middleware/usb/src`）
 - UVC 类实现：`middleware/usb/uvc/`（描述符、probe/commit 协商、CTR 驱动的打包引擎）
 - 固件必须运行在 72MHz（USBCLK = PLL/1.5 = 48MHz），不支持 128MHz 超频
+
+### 目录结构
+
+按嵌入式 SDK 目录结构设计规范（AN-SDK-001）分层：
+
+```
+arch/arm/cortex-m3/       CMSIS core（CPU 架构层）
+chip/stm32f103/           器件头文件、系统初始化、启动文件、SPL 厂商外设库（spl/）
+boards/bluepill/          board_config.h —— 引脚/外设实例选择宏
+drivers/peripheral/       自研芯片外设驱动：timer、sw_i2c
+drivers/device/           外部器件驱动：ov2640 摄像头（含 sccb/ 总线）、ssd1306 显示、sht30 传感器
+middleware/               usb（ST USB 库 + UVC 类实现）
+app/                      应用入口 app_main()、传输通道切换
+examples/vendor/          ST 参考工程（不参与编译）
+kernel/baremetal/         裸机引导：main() 引导进入 app_main()
+tests/                    单元 / 集成测试（预留）
+tools/                    PC 端接收脚本与内存分析报告
+build/                    Keil 编译输出（obj/、map/），已 gitignore
+```
 
 ### 关键设计 1：F1 ISO 端点的双缓冲语义（RM0008 §23.4.4）
 
